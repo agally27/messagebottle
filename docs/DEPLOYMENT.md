@@ -16,7 +16,7 @@ Demo mode specifics: guest sessions are created on demand; `/admin` is reachable
 ## Vercel
 1. Import the repository. Framework preset: Next.js. Build `pnpm build`, install `pnpm install --frozen-lockfile`.
 2. Add environment variables (Settings → Environment Variables). Required for a non-demo deploy: `NEXT_PUBLIC_APP_URL`, `SESSION_SECRET`, `DEMO_MODE=false`, the Supabase variables, Stripe variables, `JOBS_SECRET`.
-3. Background jobs run via `after()` on the request that starts them; the generation screen's poll re-kicks stale jobs. For belt and braces add a Vercel Cron hitting `POST /api/jobs/run` with `Authorization: Bearer $JOBS_SECRET` every minute (`vercel.json` `crons` with `CRON_SECRET` mapped to `JOBS_SECRET`).
+3. Background jobs run via `after()` on the request that starts them; the generation screen's poll re-kicks stale jobs. `vercel.json` also schedules `/api/jobs/run` every five minutes and a nightly retention sweep. Vercel Cron authenticates with `Authorization: Bearer $CRON_SECRET`, so set `CRON_SECRET` and `JOBS_SECRET` to the same value. (Hobby plans only allow daily crons; adjust the schedules or rely on the poll re-kick.)
 4. Stripe webhook endpoint: `https://<app>/api/webhooks/stripe` (events: `checkout.session.completed`, `checkout.session.expired`, `charge.refunded`). Put the signing secret in `STRIPE_WEBHOOK_SECRET`.
 5. Set the Supabase Auth Site URL to the app URL and allow `https://<app>/auth/callback`.
 

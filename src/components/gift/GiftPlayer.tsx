@@ -20,6 +20,8 @@ interface Props {
   startOpen?: boolean;
   /** Fill the parent instead of the viewport (sender's preview card). */
   embedded?: boolean;
+  /** Small element shown in the top bar (e.g. "Back to editing", "This is an example"). */
+  banner?: React.ReactNode;
   className?: string;
 }
 
@@ -40,7 +42,7 @@ function useReducedMotion() {
  * personal opening message → scenes → closing → keepsake. Audio starts only
  * after the recipient taps "Open", respecting autoplay policies.
  */
-export function GiftPlayer({ gift, preview, startOpen, embedded, className }: Props) {
+export function GiftPlayer({ gift, preview, startOpen, embedded, banner, className }: Props) {
   const theme = getTheme(gift.theme);
   const dark = theme.mode === "dark";
   const reduced = useReducedMotion();
@@ -208,12 +210,13 @@ export function GiftPlayer({ gift, preview, startOpen, embedded, className }: Pr
       </div>
 
       {/* Top bar */}
-      <div className="relative z-10 flex items-center justify-between px-4 pt-4 sm:px-6">
-        <div className={cn("flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em]", mutedColor)}>
-          <BottleMark className="h-5" />
-          <span>Message in a Bottle</span>
-          {preview ? <span className="ml-2 rounded-full bg-gold px-2 py-0.5 text-[0.6rem] text-ink">Preview</span> : null}
+      <div className="relative z-10 flex items-center justify-between gap-3 px-4 pt-4 sm:px-6">
+        <div className={cn("flex min-w-0 items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em]", mutedColor)}>
+          <BottleMark className="h-5 shrink-0" />
+          <span className={cn("truncate", banner ? "hidden sm:inline" : null)}>Message in a Bottle</span>
+          {preview ? <span className="ml-2 shrink-0 rounded-full bg-gold px-2 py-0.5 text-[0.6rem] text-ink">Preview</span> : null}
         </div>
+        {banner ? <div className="min-w-0 shrink">{banner}</div> : null}
         {stage !== "closed" && stage !== "opening" ? (
           <div className="flex items-center gap-1.5">
             {hasMusic ? (
@@ -238,7 +241,7 @@ export function GiftPlayer({ gift, preview, startOpen, embedded, className }: Pr
       {/* Content */}
       <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-5 py-10 sm:px-8" ref={liveRef} tabIndex={-1} aria-live="polite">
         {stage === "closed" ? (
-          <div className="max-w-md text-center animate-fade-up">
+          <div className={cn("max-w-md rounded-3xl px-6 py-8 text-center backdrop-blur-md animate-fade-up sm:px-10", dark ? "bg-black/30 ring-1 ring-white/10" : "bg-white/55 ring-1 ring-black/5")}>
             <BottleGlyph className={cn("mx-auto h-28 w-28", !reduced && "animate-float")} color={dark ? theme.palette.paper : theme.palette.ink} accent={theme.palette.accent} />
             <p className={cn("mt-6 text-xs font-semibold uppercase tracking-[0.2em]", mutedColor)}>For {gift.recipientName}</p>
             <h1 className={cn("mt-3 font-display text-4xl leading-tight sm:text-5xl", textColor)}>Someone has a message for you.</h1>

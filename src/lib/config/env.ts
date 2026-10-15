@@ -53,7 +53,25 @@ function emptyToUndefined(input: NodeJS.ProcessEnv): Record<string, string | und
   return out;
 }
 
-const parsed = schema.safeParse(emptyToUndefined(process.env));
+/**
+ * Accept the names other tools set for us:
+ * - Vercel's Supabase integration sets NEXT_PUBLIC_SUPABASE_ANON_KEY and
+ *   SUPABASE_SERVICE_ROLE_KEY (legacy JWT keys); Supabase's newer dashboard
+ *   calls them publishable and secret keys.
+ * - Vercel sets VERCEL_PROJECT_PRODUCTION_URL / VERCEL_URL (no scheme).
+ */
+function withAliases(e: Record<string, string | undefined>): Record<string, string | undefined> {
+  const vercelHost = e.VERCEL_ENV === "production" ? (e.VERCEL_PROJECT_PRODUCTION_URL ?? e.VERCEL_URL) : (e.VERCEL_BRANCH_URL ?? e.VERCEL_URL);
+  return {
+    ...e,
+    NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: e.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? e.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    SUPABASE_SECRET_KEY: e.SUPABASE_SECRET_KEY ?? e.SUPABASE_SERVICE_ROLE_KEY,
+    NEXT_PUBLIC_APP_URL: e.NEXT_PUBLIC_APP_URL ?? (vercelHost ? `https://${vercelHost}` : undefined),
+    JOBS_SECRET: e.JOBS_SECRET ?? e.CRON_SECRET,
+  };
+}
+
+const parsed = schema.safeParse(withAliases(emptyToUndefined(process.env)));
 if (!parsed.success) {
   const details = parsed.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ");
   throw new Error(`Invalid environment configuration: ${details}`);

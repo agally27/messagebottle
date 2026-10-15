@@ -21,6 +21,6 @@ const CreateWizard = dynamic(() => import("./CreateWizard").then((m) => m.Create
   ),
 });
 
-export function WizardLoader(props: { demoMode: boolean; signedIn: boolean }) {
+export function WizardLoader(props: { demoMode: boolean; signedIn: boolean; requiresSignIn: boolean }) {
   return <CreateWizard {...props} />;
 }

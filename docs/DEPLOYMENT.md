@@ -1,42 +1,52 @@
-# Deployment
+# Deployment: Vercel + Supabase
 
-Nothing has been deployed yet. This is the prepared path.
+**Hosting:** Vercel (Next.js). **Database, auth, storage:** Supabase. Neon was considered but the app already uses Supabase Auth, Storage and RLS; Neon would mean replacing auth (see docs/DECISIONS.md #13).
 
-## Environments
-| Mode | What you need | What you get |
-| --- | --- | --- |
-| Demo (default) | nothing | local JSON store, guest sessions, local story writer, procedural art and music, demo checkout |
-| Staging | Supabase project, Stripe **test** keys, `SESSION_SECRET`, `JOBS_SECRET` | real accounts, Postgres with RLS, test-mode payments |
-| Production | the above with live keys, `DEMO_MODE=false`, real AI providers as desired | the real thing |
+Nothing has been deployed by the build sessions: their network blocks vercel.com and supabase.com. Everything below was prepared and checked locally (`pnpm check`, `pnpm test:e2e`, `pnpm test:supabase`).
 
-Copy `.env.example` → `.env.local` for development. Variable names are the documentation; never commit values.
+## 1. Supabase (about 10 minutes)
+1. Create a project at supabase.com (region: London `eu-west-2` for UK customers).
+2. **SQL Editor → New query**: paste all of `supabase/migrations/0001_init.sql` and run it. It is safe to run again.
+3. **Authentication → URL Configuration**: set **Site URL** to your Vercel URL (e.g. `https://messagebottle.vercel.app`) and add `https://messagebottle.vercel.app/auth/callback` (and `https://*-<your-team>.vercel.app/auth/callback` for previews) to **Redirect URLs**.
+4. **Authentication → Providers → Email**: enabled (magic links). Supabase's built-in email sender is heavily rate-limited (a few emails an hour) — fine for testing; add custom SMTP (e.g. Resend) under **Authentication → Emails → SMTP Settings** before real customers.
+5. **Project Settings → API**: note the project URL, the publishable (anon) key and the secret (service role) key.
 
-Demo mode specifics: guest sessions are created on demand; `/admin` is reachable by entering `DEMO_ADMIN_SECRET` under "Operator sign-in" on the login page; demo checkout and demo activation exist only while Stripe keys are absent. Abandoned drafts are swept by `POST /api/jobs/run?sweep=1`.
+## 2. Vercel (about 5 minutes)
+1. **Add New → Project → Import** `agally27/messagebottle`. Framework: Next.js (auto-detected). Root directory: repository root. Build and install commands: defaults (pnpm is detected from `packageManager`).
+2. Production branch = the repository's default branch (currently `claude/friendly-hamilton-h5i2xs`). Rename it to `main` on GitHub whenever convenient; Vercel follows.
+3. **Environment Variables** (Production and Preview):
 
-## Vercel
-1. Import the repository. Framework preset: Next.js. Build `pnpm build`, install `pnpm install --frozen-lockfile`.
-2. Add environment variables (Settings → Environment Variables). Required for a non-demo deploy: `NEXT_PUBLIC_APP_URL`, `SESSION_SECRET`, `DEMO_MODE=false`, the Supabase variables, Stripe variables, `JOBS_SECRET`.
-3. Background jobs run via `after()` on the request that starts them; the generation screen's poll re-kicks stale jobs. `vercel.json` also schedules `/api/jobs/run` every five minutes and a nightly retention sweep. Vercel Cron authenticates with `Authorization: Bearer $CRON_SECRET`, so set `CRON_SECRET` and `JOBS_SECRET` to the same value. (Hobby plans only allow daily crons; adjust the schedules or rely on the poll re-kick.)
-4. Stripe webhook endpoint: `https://<app>/api/webhooks/stripe` (events: `checkout.session.completed`, `checkout.session.expired`, `charge.refunded`). Put the signing secret in `STRIPE_WEBHOOK_SECRET`.
-5. Set the Supabase Auth Site URL to the app URL and allow `https://<app>/auth/callback`.
+| Variable | Value |
+| --- | --- |
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | publishable / anon key |
+| `SUPABASE_SECRET_KEY` | secret / service-role key (**server only**) |
+| `SESSION_SECRET` | `openssl rand -hex 32` |
+| `CRON_SECRET` | `openssl rand -hex 32` (also used as `JOBS_SECRET`) |
+| `ADMIN_EMAILS` | your email, for `/admin` |
+| `DEMO_MODE` | `true` while Stripe is not configured (labelled demo checkout); `false` once it is |
+| `NEXT_PUBLIC_APP_URL` | optional; defaults to the Vercel production domain. Set it when you add a custom domain. |
 
-Local JSON storage is not suitable for Vercel (read-only, per-instance filesystem). The app warns at startup if the local store is used in production without `DEMO_MODE=true`.
+Alternatively install the **Supabase integration** from the Vercel Marketplace: it sets `NEXT_PUBLIC_SUPABASE_ANON_KEY` and `SUPABASE_SERVICE_ROLE_KEY`, which the app also accepts.
 
-## Supabase
-See `supabase/README.md`: apply `supabase/migrations/0001_init.sql`, enable email auth, create admins via `ADMIN_EMAILS`. The `gift-assets` bucket is private; generated media (when real providers exist) is uploaded server-side and served through signed URLs.
+4. Deploy. Then open `/api/health` (should return `{"ok":true}`), sign in with your admin email, and visit `/admin` to see which integrations are live.
 
-## Stripe
-Use test keys first. Prices are never configured in Stripe: checkout sessions are created with inline `price_data` from `src/lib/config/products.ts`, so the catalogue in code is the single source of truth. Orders become `paid` only via the verified webhook.
+Optional, any time later: `ANTHROPIC_API_KEY` (AI-written stories), `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET` with a webhook to `https://<app>/api/webhooks/stripe` for `checkout.session.completed`, `checkout.session.expired`, `charge.refunded` (then set `DEMO_MODE=false`), `RESEND_API_KEY` + `EMAIL_FROM` (gift emails).
 
-## Operations
-- `GET /api/health` — liveness and which integrations are configured (booleans only).
-- `/admin` — jobs, failed jobs with retry, orders, physical fulfilment (admin accounts only).
-- Logs contain ids and statuses only. Search by gift or job id.
-- Retry policy: 3 attempts, exponential backoff, permanent errors fail immediately and are shown to the sender with a retry button.
+## Background jobs and crons
+Generation runs right after the request that starts it (`after()`), and the generation screen re-kicks anything stalled. `vercel.json` adds two **daily** crons (job safety net, draft retention sweep), which the Hobby plan allows. On Pro you can make the job cron every few minutes.
 
-## Checks before a release
+## Must be true in production
+- Supabase configured. Without it the app falls back to a local file store, which on Vercel is per-instance and loses data. The server logs a warning if this happens.
+- `SESSION_SECRET` set.
+- Never `DEMO_MODE=true` together with live Stripe keys (demo checkout is disabled automatically when Stripe keys exist, but keep them consistent).
+
+## Verify locally before changing the schema
 ```
-pnpm check            # typecheck + lint + unit tests + build
-pnpm test:e2e         # Playwright journeys against the production build (demo mode)
+pnpm check          # typecheck, lint, unit tests, build
+pnpm test:e2e       # Playwright journeys + accessibility (demo mode)
+pnpm test:supabase  # migration + SupabaseStore against local Postgres 16 + PostgREST
 ```
-Then the manual checklist in docs/SECURITY.md.
+
+## Mobile and other hosts
+Any Node host works: `pnpm build && pnpm start` with the same variables.

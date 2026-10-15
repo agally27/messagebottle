@@ -10,17 +10,21 @@ import type { AuditEvent, EmailDelivery, GenerationJob, Gift, JobStatus, Order, 
  * webhooks have no user session. RLS still protects direct client access.
  *
  * Column mapping: snake_case in Postgres, camelCase in the domain.
- * NOT YET VERIFIED against a live project (no credentials in this environment).
+ * Verified against Postgres 16 + PostgREST 12 with the real migration
+ * (`pnpm test:supabase`); not yet run against a hosted Supabase project.
  */
 export class SupabaseStore implements DataStore {
   readonly kind = "supabase" as const;
   private client: SupabaseClient;
 
-  constructor() {
-    if (!env.NEXT_PUBLIC_SUPABASE_URL || !env.SUPABASE_SECRET_KEY) {
-      throw new Error("SupabaseStore requires NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SECRET_KEY");
+  /** `opts` exists for integration tests against a local PostgREST; production reads env. */
+  constructor(opts: { url?: string; secretKey?: string } = {}) {
+    const url = opts.url ?? env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = opts.secretKey ?? env.SUPABASE_SECRET_KEY;
+    if (!url || !key) {
+      throw new Error("SupabaseStore requires NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SECRET_KEY (or SUPABASE_SERVICE_ROLE_KEY)");
     }
-    this.client = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SECRET_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
+    this.client = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
   }
 
   private static iso(v: unknown): string | null {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Steps } from "@/components/ui/Steps";
 import { Notice } from "@/components/ui/Notice";
@@ -37,8 +37,9 @@ export interface StepProps {
   errors: FieldErrors;
 }
 
-export function CreateWizard({ demoMode, signedIn }: { demoMode: boolean; signedIn: boolean }) {
+export function CreateWizard({ demoMode, signedIn, requiresSignIn }: { demoMode: boolean; signedIn: boolean; requiresSignIn: boolean }) {
   const params = useSearchParams();
+  const router = useRouter();
   const initial = useMemo(() => {
     const saved = loadDraft();
     const occasionParam = params.get("occasion");
@@ -139,6 +140,12 @@ export function CreateWizard({ demoMode, signedIn }: { demoMode: boolean; signed
       }
     }
     setFormError(null);
+    if (requiresSignIn) {
+      // Real accounts: keep the draft (already in localStorage, at this step) and come back here after signing in.
+      saveDraft({ input, step, productId: initial.productId });
+      router.push(`/login?next=${encodeURIComponent("/create")}`);
+      return;
+    }
     startTransition(async () => {
       const result = await createGiftAction(input, { productId: initial.productId });
       // On success the action redirects and never returns here.
@@ -203,7 +210,7 @@ export function CreateWizard({ demoMode, signedIn }: { demoMode: boolean; signed
           </Button>
           {stepId === "review" ? (
             <Button type="button" size="lg" onClick={submit} disabled={pending}>
-              {pending ? "Starting…" : "Create my gift"}
+              {pending ? "Starting…" : requiresSignIn ? "Sign in to create my gift" : "Create my gift"}
             </Button>
           ) : (
             <Button type="button" size="lg" onClick={next}>

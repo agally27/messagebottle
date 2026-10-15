@@ -26,6 +26,13 @@ Functional development build. In demo mode (no credentials) the complete journey
 | E2E | `pnpm test:e2e` | 30 pass (8 journeys + 7 axe scans, × mobile + desktop): landing, example reveal, full sender journey incl. stranger access 404 and revoke, draft persistence, invalid links, auth redirect, open-redirect refusal, demo checkout (digital + physical with address validation), print page + QR, non-admin blocked, admin fulfilment to dispatched; axe WCAG A/AA with no serious/critical violations on landing, pricing, wizard, login, support, example (closed and opened) |
 | Security review | adversarial read of auth, actions, routes, payments, RLS | 1 high, 7 medium, 7 low findings — all fixed (see docs/SECURITY.md review log) |
 
+## Deployment readiness (Vercel + Supabase)
+- Deploy guide: docs/DEPLOYMENT.md. **Not deployed yet**: the build environment cannot reach vercel.com or supabase.com.
+- Migration verified on Postgres 16: applies and re-applies cleanly; RLS blocks owners writing gifts, admin self-escalation and order inserts; server-only functions are not executable by anon/authenticated.
+- `SupabaseStore` verified end to end against PostgREST 12 with the real migration (`pnpm test:supabase`, 5 tests including generate → order → webhook paid → public link).
+- Still unverified until a real project exists: Supabase Auth magic-link sign-in and the session refresh proxy.
+- Vercel fixes: crons made daily (Hobby limit), app URL defaults to the Vercel domain, env aliases for the Vercel Supabase integration, signed-out senders are sent to sign-in with their draft kept.
+
 ## Overall assessment
 **Functional development build, not a release candidate.** Every user-facing journey works end to end in demo mode and is covered by automated tests, the security review findings are fixed, and the architecture is ready for real services. It becomes a release candidate once Supabase, Stripe (test mode) and at least one AI provider have been run for real and the launch checklist in docs/SECURITY.md is done.
 

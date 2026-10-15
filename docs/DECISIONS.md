@@ -37,3 +37,6 @@ Fraunces and Manrope (both OFL) are committed as woff2 and loaded with `next/fon
 
 ### 12. Mood-board crops as placeholder photography
 The founder's mood board set the direction (golden hour, kraft, glowing bottle, handwritten notes). To get the landing page to that standard without a photo shoot, crops of the board are used as product photography in four places, labelled in docs/DESIGN.md as placeholders to replace with real shots. Everything else that looks photographic is drawn: the glowing bottle and scene art are SVG, so they stay crisp and consistent.
+
+### 13. Supabase rather than Neon
+Both host Postgres well. The app already relies on Supabase Auth (magic links), Storage (private bucket for generated media) and RLS tied to `auth.uid()`. Neon would need a separate auth provider and storage, more moving parts for no gain at this stage. The `DataStore` interface keeps a later move possible.

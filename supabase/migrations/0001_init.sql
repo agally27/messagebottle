@@ -17,7 +17,9 @@ create table if not exists public.profiles (
   updated_at timestamptz not null default now()
 );
 alter table public.profiles enable row level security;
+drop policy if exists "profiles: owner read" on public.profiles;
 create policy "profiles: owner read" on public.profiles for select using (auth.uid() = id);
+drop policy if exists "profiles: owner update" on public.profiles;
 create policy "profiles: owner update" on public.profiles for update using (auth.uid() = id) with check (auth.uid() = id and is_admin = (select p.is_admin from public.profiles p where p.id = auth.uid()));
 
 -- Create a profile row automatically for new auth users.
@@ -53,6 +55,7 @@ create index if not exists gifts_status_idx on public.gifts (status);
 alter table public.gifts enable row level security;
 -- Senders may READ their gifts directly; every write (status, story, token…) goes
 -- through the server with the service role so payment and validation cannot be bypassed.
+drop policy if exists "gifts: owner read" on public.gifts;
 create policy "gifts: owner read" on public.gifts for select using (auth.uid() = owner_id);
 
 -- ── generation_jobs ─────────────────────────────────────────────────────────
@@ -80,6 +83,7 @@ create index if not exists jobs_gift_created_idx on public.generation_jobs (gift
 create index if not exists jobs_due_idx on public.generation_jobs (status, next_run_at, lease_until);
 create index if not exists jobs_owner_created_idx on public.generation_jobs (owner_id, created_at desc);
 alter table public.generation_jobs enable row level security;
+drop policy if exists "jobs: owner read" on public.generation_jobs;
 create policy "jobs: owner read" on public.generation_jobs for select using (auth.uid() = owner_id);
 -- Jobs are created and advanced by the server (service role) only.
 
@@ -128,6 +132,7 @@ create index if not exists orders_gift_idx on public.orders (gift_id);
 create index if not exists orders_status_idx on public.orders (status);
 create index if not exists orders_payment_intent_idx on public.orders (stripe_payment_intent_id);
 alter table public.orders enable row level security;
+drop policy if exists "orders: owner read" on public.orders;
 create policy "orders: owner read" on public.orders for select using (auth.uid() = owner_id);
 -- Orders are created/updated by the server (checkout + webhooks) only.
 

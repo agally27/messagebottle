@@ -75,6 +75,21 @@ describe("orders and webhooks", () => {
     expect(audit.filter((a) => a.action === "order.paid").length).toBe(1);
   });
 
+  it("releases the event id when the handler fails so the provider's retry is processed", async () => {
+    const gift = await readyGift();
+    const order = await createPendingOrder(user, gift, { productId: "digital" });
+    await getStore().orders.update(order.id, { stripeCheckoutSessionId: "cs_fail" });
+    const store = getStore();
+    const original = store.orders.update;
+    store.orders.update = async () => { throw new Error("db blip"); };
+    const event = { id: "evt_retry", type: "checkout.session.completed", data: { object: { id: "cs_fail", payment_status: "paid", amount_total: 499, currency: "gbp", metadata: { orderId: order.id } } } };
+    await expect(handleStripeEvent(event)).rejects.toThrow(/db blip/);
+    store.orders.update = original;
+    const retry = await handleStripeEvent(event);
+    expect(retry.duplicate).toBeUndefined();
+    expect((await store.orders.get(order.id))?.status).toBe("paid");
+  });
+
   it("does not mark an order paid when the amount or session does not match", async () => {
     const gift = await readyGift();
     const order = await createPendingOrder(user, gift, { productId: "digital" });

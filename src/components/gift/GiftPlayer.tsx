@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { SceneArt } from "@/components/art/SceneArt";
 import { getTheme } from "@/lib/domain/themes";
-import type { PublicGift, Scene } from "@/lib/domain/types";
+import type { PublicGift, PublicScene } from "@/lib/domain/types";
 import { ProceduralMusic } from "@/lib/audio/procedural-music";
 import { DeviceNarrator } from "@/lib/audio/narration";
 import { cn } from "@/lib/utils/cn";
@@ -80,6 +80,9 @@ export function GiftPlayer({ gift, preview, startOpen, embedded, className }: Pr
 
   const open = async () => {
     setStage("opening");
+    if (!preview && gift.token !== "example") {
+      void fetch(`/api/g/${gift.token}/open`, { method: "POST", keepalive: true }).catch(() => undefined);
+    }
     if (hasMusic && !muted) await startMusic();
     window.setTimeout(() => setStage("message"), reduced ? 300 : 2400);
   };
@@ -183,7 +186,7 @@ export function GiftPlayer({ gift, preview, startOpen, embedded, className }: Pr
 
   const total = scenes.length + 2; // message + scenes + closing
   const position = stage === "message" ? 0 : stage === "scene" ? sceneIndex + 1 : stage === "closing" ? total - 1 : total;
-  const scene: Scene | undefined = stage === "scene" ? scenes[sceneIndex] : undefined;
+  const scene: PublicScene | undefined = stage === "scene" ? scenes[sceneIndex] : undefined;
   const heroSpec = scenes[0]?.art.kind === "procedural" ? scenes[0].art.spec : { theme: gift.theme, motif: "bottle" as const, timeOfDay: "night" as const, seed: 1 };
 
   const textColor = dark ? "text-text-on-dark" : "text-ink";
@@ -242,7 +245,7 @@ export function GiftPlayer({ gift, preview, startOpen, embedded, className }: Pr
             <p className={cn("mt-4", mutedColor)}>
               A story in {scenes.length} scenes{hasMusic ? ", with music" : ""}. From {gift.senderName}. About {Math.max(2, Math.ceil(total * 0.6))} minutes.
             </p>
-            <button type="button" onClick={() => void open()} className={cn("mt-8 inline-flex h-14 items-center justify-center rounded-full px-8 text-base font-semibold shadow-lift transition-transform active:scale-[0.98]", dark ? "bg-paper text-ink" : "bg-ink text-text-on-dark")} style={dark ? { backgroundColor: theme.palette.paper, color: theme.palette.ink } : undefined}>
+            <button type="button" onClick={() => void open()} className={cn("mt-8 inline-flex h-14 items-center justify-center rounded-full px-8 text-base font-semibold shadow-lift transition-transform active:scale-[0.98]", dark ? "bg-paper text-ink" : "bg-ink text-text-on-dark")} style={dark ? { backgroundColor: theme.palette.paper, color: theme.palette.bg } : undefined}>
               Open the bottle
             </button>
             {hasMusic ? <p className={cn("mt-4 text-xs", mutedColor)}>Sound on for the full experience. You can mute at any time.</p> : null}
@@ -312,12 +315,13 @@ export function GiftPlayer({ gift, preview, startOpen, embedded, className }: Pr
             <button type="button" onClick={goBack} disabled={stage === "message"} aria-label="Previous" className={cn("flex h-12 w-12 items-center justify-center rounded-full border transition-colors disabled:opacity-30", dark ? "border-white/30 text-text-on-dark hover:bg-white/10" : "border-ink/25 text-ink hover:bg-ink/5")}>
               <ChevronLeft />
             </button>
-            <div className="flex items-center gap-1.5" aria-label={`Part ${position + 1} of ${total}`}>
+            <div className="flex items-center gap-1.5">
+              <span className="sr-only">Part {position + 1} of {total}</span>
               {Array.from({ length: total }).map((_, i) => (
                 <span key={i} className={cn("h-1.5 rounded-full transition-all", i === position ? "w-6" : "w-1.5", i <= position ? "opacity-100" : "opacity-35")} style={{ backgroundColor: dark ? theme.palette.paper : theme.palette.ink }} aria-hidden />
               ))}
             </div>
-            <button type="button" onClick={goNext} aria-label={stage === "closing" ? "Finish" : "Next"} className={cn("flex h-12 min-w-12 items-center justify-center gap-2 rounded-full px-5 text-sm font-semibold shadow-soft transition-transform active:scale-[0.98]", dark ? "bg-paper text-ink" : "bg-ink text-text-on-dark")} style={dark ? { backgroundColor: theme.palette.paper, color: theme.palette.ink } : undefined}>
+            <button type="button" onClick={goNext} aria-label={stage === "closing" ? "Finish" : "Next"} className={cn("flex h-12 min-w-12 items-center justify-center gap-2 rounded-full px-5 text-sm font-semibold shadow-soft transition-transform active:scale-[0.98]", dark ? "bg-paper text-ink" : "bg-ink text-text-on-dark")} style={dark ? { backgroundColor: theme.palette.paper, color: theme.palette.bg } : undefined}>
               {stage === "closing" ? "Finish" : "Next"}
               <ChevronRight />
             </button>

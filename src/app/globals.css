@@ -18,12 +18,14 @@
   --color-ocean: #2c5f8a;
   --color-ocean-deep: #1c4466;
   --color-teal: #3e7f86;
+  --color-teal-deep: #2b6168;
   --color-seaglass: #a8c8c2;
   --color-seaglass-pale: #dcebe7;
   --color-mist: #eef3f4;
 
   /* Accents */
   --color-gold: #c9a961;
+  --color-gold-deep: #8a6a1e;
   --color-gold-pale: #efe3c3;
   --color-coral: #d98b74;
   --color-coral-pale: #f6dfd6;
@@ -31,7 +33,7 @@
   /* Text */
   --color-text: #1c2333;
   --color-text-muted: #5b6578;
-  --color-text-faint: #8b94a5;
+  --color-text-faint: #5f687a;
   --color-text-on-dark: #f4efe4;
   --color-text-on-dark-muted: #b9c2cf;
 
@@ -183,7 +185,7 @@
 }
 
 @utility eyebrow {
-  @apply text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-teal;
+  @apply text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-teal-deep;
 }
 
 /* Hide scrollbars on horizontal chip rows without removing scrollability */

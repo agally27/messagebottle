@@ -226,9 +226,13 @@ export class SupabaseStore implements DataStore {
       return (data?.length ?? 0) > 0;
     },
     recordOpen: async (id, at) => {
-      const { data } = await this.client.from("gifts").select("open_count, first_opened_at").eq("id", id).maybeSingle();
-      if (!data) return;
-      await this.client.from("gifts").update({ open_count: (data.open_count as number) + 1, first_opened_at: data.first_opened_at ?? at, last_opened_at: at }).eq("id", id);
+      const { error } = await this.client.rpc("record_gift_open", { p_gift_id: id, p_at: at });
+      if (error) console.warn("[supabase] gifts.recordOpen failed", error.message);
+    },
+    listAbandoned: async (beforeIso, limit) => {
+      const { data, error } = await this.client.from("gifts").select("*").in("status", ["draft", "failed"]).lt("updated_at", beforeIso).order("updated_at", { ascending: true }).limit(limit);
+      if (error) this.fail("gifts.listAbandoned", error);
+      return (data ?? []).map(SupabaseStore.gift);
     },
   };
 
@@ -301,6 +305,11 @@ export class SupabaseStore implements DataStore {
       if (error) this.fail("orders.getByCheckoutSession", error);
       return data ? SupabaseStore.order(data) : null;
     },
+    getByPaymentIntent: async (paymentIntentId) => {
+      const { data, error } = await this.client.from("orders").select("*").eq("stripe_payment_intent_id", paymentIntentId).limit(1).maybeSingle();
+      if (error) this.fail("orders.getByPaymentIntent", error);
+      return data ? SupabaseStore.order(data) : null;
+    },
     listByOwner: async (ownerId) => {
       const { data, error } = await this.client.from("orders").select("*").eq("owner_id", ownerId).order("created_at", { ascending: false });
       if (error) this.fail("orders.listByOwner", error);
@@ -334,6 +343,10 @@ export class SupabaseStore implements DataStore {
         this.fail("payments.recordEvent", error);
       }
       return { duplicate: false };
+    },
+    deleteEvent: async (id) => {
+      const { error } = await this.client.from("payment_events").delete().eq("id", id);
+      if (error) console.warn("[supabase] payments.deleteEvent failed", error.message);
     },
   };
 

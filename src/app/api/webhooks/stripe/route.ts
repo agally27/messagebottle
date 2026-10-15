@@ -20,7 +20,7 @@ export async function POST(req: Request) {
     if (!outcome.handled) console.warn("[webhook] unhandled", { id: event.id, type: event.type, reason: outcome.reason });
     return NextResponse.json({ received: true, ...outcome });
   } catch (err) {
-    // 500 makes Stripe retry; the event-id record was not committed for failed handlers only when recordEvent itself failed.
+    // 500 makes Stripe retry; handleStripeEvent released the event id so the retry is processed.
     console.error("[webhook] handler failed", { id: event.id, type: event.type, message: err instanceof Error ? err.message : err });
     return NextResponse.json({ error: "Handler failed" }, { status: 500 });
   }

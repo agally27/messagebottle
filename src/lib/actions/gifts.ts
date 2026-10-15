@@ -7,7 +7,7 @@ import { demoAuthEnabled, getCurrentUser, signInDemoUser } from "@/lib/auth/sess
 import { formatIssues, giftInputSchema } from "@/lib/domain/schemas";
 import { activateGift, applyGiftSettings, applyStoryEdits, createGift, deleteGift, publicGiftUrl, RateLimitedError, regenerateLink, revokeGift, startGeneration } from "@/lib/gifts/service";
 import { getStore } from "@/lib/data";
-import { env } from "@/lib/config/env";
+import { demoCheckoutAvailable } from "@/lib/payments/checkout";
 import { ZodError } from "zod";
 
 export type ActionResult<T = undefined> = { ok: true; data: T } | { ok: false; error: string; fieldErrors?: Record<string, string> };
@@ -46,6 +46,7 @@ export async function retryGenerationAction(giftId: string): Promise<ActionResul
   try {
     const user = await requireUser();
     const gift = await requireOwnedGift(giftId, user);
+    if (gift.status !== "failed" && gift.status !== "draft" && gift.status !== "generating") return { ok: false, error: "This gift is already complete. Edit it from the gift page." };
     const job = await startGeneration(user, gift);
     revalidatePath(`/gifts/${giftId}`);
     return { ok: true, data: { jobId: job.id } };
@@ -81,7 +82,7 @@ export async function saveGiftSettingsAction(giftId: string, edits: unknown): Pr
 /** Demo-only: activates the link without payment. Refused outside demo mode. */
 export async function activateDemoAction(giftId: string): Promise<ActionResult> {
   try {
-    if (!env.demoMode) return { ok: false, error: "Demo activation is disabled. Complete checkout to send this gift." };
+    if (!demoCheckoutAvailable()) return { ok: false, error: "Demo activation is disabled. Complete checkout to send this gift." };
     const user = await requireUser();
     const gift = await requireOwnedGift(giftId, user);
     await activateGift(gift, "demo");
@@ -129,7 +130,11 @@ export async function sendGiftEmailAction(giftId: string, input: { to: string; n
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) return { ok: false, error: "Enter a valid email address.", fieldErrors: { to: "Enter a valid email address." } };
     const { emailConfigured, giftLinkEmail, sendEmail } = await import("@/lib/email");
     if (!emailConfigured()) return { ok: false, error: "Email delivery isn't configured on this deployment. Copy the link and send it yourself." };
-    const limit = await getStore().rateLimit.hit(`email:${user.id}`, 20, 60 * 60 * 1000);
+    // Guest accounts are free to create, so only paid gifts (or real accounts) may send email, and only a few per hour.
+    const orders = await getStore().orders.listByGift(gift.id);
+    const paid = orders.some((o) => o.status !== "pending" && o.status !== "cancelled" && o.status !== "refunded" && o.paymentProvider === "stripe");
+    if (!paid && user.kind !== "supabase") return { ok: false, error: "Email delivery is available for paid gifts. Copy the link and send it yourself." };
+    const limit = await getStore().rateLimit.hit(`email:${user.id}`, 5, 60 * 60 * 1000);
     if (!limit.allowed) return { ok: false, error: "Too many emails sent in the last hour." };
     const delivery = await sendEmail(giftLinkEmail({ to, recipientName: gift.input.recipientName, senderName: gift.input.senderName, url: publicGiftUrl(gift), note: input.note?.slice(0, 300), giftId: gift.id }));
     if (delivery.status !== "sent") return { ok: false, error: "The email couldn't be sent. Copy the link and send it yourself." };

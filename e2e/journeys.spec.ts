@@ -195,6 +195,13 @@ test.describe("recipient safety", () => {
     await page.goto("/dashboard");
     await expect(page).toHaveURL(/\/login\?next=%2Fdashboard/);
   });
+
+  test("login never redirects off-site", async ({ page }) => {
+    await page.goto("/login?next=//evil.example");
+    await page.getByLabel(/your name/i).fill("Eve");
+    await page.getByRole("button", { name: /continue as guest/i }).click();
+    await expect(page).toHaveURL(/\/dashboard$/);
+  });
 });
 
 test.describe("commerce (demo checkout)", () => {
@@ -254,7 +261,9 @@ test.describe("commerce (demo checkout)", () => {
     const adminCtx = await browser.newContext();
     const ap = await adminCtx.newPage();
     await ap.goto("/login?next=%2Fadmin%2Forders");
-    await ap.getByLabel(/your name/i).fill("admin");
+    await ap.getByLabel(/your name/i).fill("Ops");
+    await ap.getByText("Operator sign-in").click();
+    await ap.getByLabel(/demo admin secret/i).fill("e2e-demo-admin-secret");
     await ap.getByRole("button", { name: /continue as guest/i }).click();
     await expect(ap).toHaveURL(/\/admin\/orders/);
     await ap.goto(`/admin/orders/${orderId}`);

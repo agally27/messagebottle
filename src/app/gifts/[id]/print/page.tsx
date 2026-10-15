@@ -23,8 +23,7 @@ export default async function PrintPage({ params }: PageProps<"/gifts/[id]/print
   const qr = await QRCode.toDataURL(url, { width: 360, margin: 1, errorCorrectionLevel: "M", color: { dark: "#14213dff", light: "#ffffff00" } });
   const paragraphs = gift.input.message.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
   return (
-    <html lang="en-GB">
-      <body className="bg-white text-ink font-sans">
+    <div className="min-h-dvh bg-white text-ink font-sans">
         <style>{`@page { size: A5; margin: 14mm; } @media print { .no-print { display: none !important; } body { background: white; } }`}</style>
         <div className="no-print fixed left-0 right-0 top-0 z-10 flex items-center justify-between gap-3 border-b border-line bg-cream px-5 py-3 text-sm">
           <span className="text-text-muted">Print preview · A5 · gift {gift.id.slice(0, 8)}</span>
@@ -62,7 +61,6 @@ export default async function PrintPage({ params }: PageProps<"/gifts/[id]/print
             </div>
           </footer>
         </main>
-      </body>
-    </html>
+    </div>
   );
 }

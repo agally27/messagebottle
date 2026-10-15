@@ -6,7 +6,7 @@ type Tone = "neutral" | "gold" | "teal" | "success" | "warning" | "danger" | "in
 const tones: Record<Tone, string> = {
   neutral: "bg-sand text-text-muted",
   gold: "bg-gold-pale text-[#6d5620]",
-  teal: "bg-seaglass-pale text-teal",
+  teal: "bg-seaglass-pale text-teal-deep",
   success: "bg-success-pale text-success",
   warning: "bg-warning-pale text-warning",
   danger: "bg-danger-pale text-danger",

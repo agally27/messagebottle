@@ -11,6 +11,8 @@ Nothing has been deployed yet. This is the prepared path.
 
 Copy `.env.example` → `.env.local` for development. Variable names are the documentation; never commit values.
 
+Demo mode specifics: guest sessions are created on demand; `/admin` is reachable by entering `DEMO_ADMIN_SECRET` under "Operator sign-in" on the login page; demo checkout and demo activation exist only while Stripe keys are absent. Abandoned drafts are swept by `POST /api/jobs/run?sweep=1`.
+
 ## Vercel
 1. Import the repository. Framework preset: Next.js. Build `pnpm build`, install `pnpm install --frozen-lockfile`.
 2. Add environment variables (Settings → Environment Variables). Required for a non-demo deploy: `NEXT_PUBLIC_APP_URL`, `SESSION_SECRET`, `DEMO_MODE=false`, the Supabase variables, Stripe variables, `JOBS_SECRET`.

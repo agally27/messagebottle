@@ -181,12 +181,19 @@ function Window({ ctx }: { ctx: Ctx }) {
   return (
     <g>
       <rect width={W} height={H} fill={p.ink} opacity={0.55} />
-      <g transform={`translate(${W * 0.5 - 220} ${H * 0.16})`}>
-        <rect width={440} height={520} rx={210} fill={p.accent} opacity={0.18} />
-        <rect x={16} y={16} width={408} height={488} rx={200} fill={`url(#${ctx.uid}-sky)`} />
-        <rect x={16} y={16} width={408} height={488} rx={200} fill="none" stroke={p.paper} strokeWidth={10} opacity={0.9} />
-        <path d="M220 16v488M16 270h408" stroke={p.paper} strokeWidth={8} opacity={0.9} />
-        <ellipse cx={220} cy={560} rx={260} ry={26} fill={p.accent} opacity={0.3} />
+      <g transform={`translate(${W * 0.5 - 200} ${H * 0.14})`}>
+        {/* warm spill of light on the wall and floor */}
+        <ellipse cx={200} cy={540} rx={320} ry={60} fill={p.accent} opacity={0.22} />
+        <rect x={-40} y={-30} width={480} height={600} rx={30} fill={p.accent} opacity={0.08} />
+        {/* arched frame */}
+        <path d="M0 200 A200 200 0 0 1 400 200 V520 H0 Z" fill={`url(#${ctx.uid}-sky)`} />
+        <path d="M0 200 A200 200 0 0 1 400 200 V520 H0 Z" fill="none" stroke={p.paper} strokeWidth={12} opacity={0.95} />
+        <path d="M200 0 V520 M0 260 H400 M0 390 H400" stroke={p.paper} strokeWidth={8} opacity={0.9} />
+        {/* sill */}
+        <rect x={-24} y={516} width={448} height={22} rx={6} fill={p.paper} opacity={0.95} />
+        {/* a small plant on the sill */}
+        <path d="M330 516 v-50 M330 480 c-20 -8 -30 -30 -24 -46 c16 6 26 24 24 46 M330 494 c20 -10 32 -30 26 -48 c-16 8 -28 26 -26 48" stroke={p.accent2} strokeWidth={5} fill="none" strokeLinecap="round" />
+        <rect x={312} y={496} width={36} height={22} rx={4} fill={p.accent} opacity={0.9} />
       </g>
     </g>
   );
@@ -391,15 +398,18 @@ export function SceneArt({ spec, alt, className }: { spec: SceneArtSpec; alt?: s
   const p = theme.palette;
   const skyTop = spec.timeOfDay === "night" ? p.bg : spec.timeOfDay === "dawn" ? p.accent2 : p.bg;
   const skyBottom = spec.timeOfDay === "dusk" || spec.timeOfDay === "dawn" ? p.accent : p.bg2;
+  const decorative = alt === "";
   return (
     <svg
       viewBox={`0 0 ${W} ${H}`}
       preserveAspectRatio="xMidYMid slice"
       className={cn("block h-full w-full", className)}
-      role="img"
-      aria-label={alt ?? "Illustrated scene"}
+      role={decorative ? undefined : "img"}
+      aria-hidden={decorative ? true : undefined}
+      aria-label={decorative ? undefined : (alt ?? "Illustrated scene")}
+      focusable="false"
     >
-      <title>{alt ?? "Illustrated scene"}</title>
+      {decorative ? null : <title>{alt ?? "Illustrated scene"}</title>}
       <defs>
         <linearGradient id={`${uid}-sky`} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor={skyTop} />

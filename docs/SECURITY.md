@@ -35,6 +35,18 @@ Personal messages are intimate. This document states what the code does today an
 - Deleting a gift removes its story, scenes, audio references and jobs.
 - Gift content is sent to AI providers only to fulfil that gift, and only when a provider is configured; this is disclosed in the privacy notice.
 
+## Review log
+An adversarial code review (15 October 2026) found and the following were fixed the same day:
+- **High** — the Supabase `gifts` RLS policy allowed owners to write their own rows from the browser (status, story, token), bypassing payment. Now read-only for clients; all writes go through the service role.
+- Webhook idempotency claimed the event id before processing, so a failed handler made Stripe's retry a no-op. The id is now released on failure.
+- Open redirects via `next=//host` and `/\host` on login, the auth callback and the sign-in action. Replaced by `safeNextPath`, which resolves against the app origin.
+- `SECURITY DEFINER` functions were executable by `anon`/`authenticated` by default. Execute is now revoked and granted to `service_role` only.
+- Demo admin was derived from a user-supplied display name. It now requires `DEMO_ADMIN_SECRET` entered on the login page, and only in demo mode.
+- Demo activation checked `DEMO_MODE` alone; it now also requires that Stripe is not configured (same rule as demo checkout).
+- Deleting a gift could cascade-delete a paid physical order; deletion is refused while a paid order exists.
+- Regeneration could run on a ready/active gift, overwriting sender edits and taking a live link dark; it is now refused for finished gifts.
+- Lows: explicit `undefined` in settings edits no longer erases values; the recipient projection omits prompts and provenance; opens are counted on the "Open" tap (POST) rather than page load, atomically on Supabase; the print page no longer nests `<html>`; email sending is limited to paid gifts or real accounts, five per hour; refund lookup uses a payment-intent index; `/api/health` shows configuration only to admins.
+
 ## Before public launch
 - [ ] Supabase backend with RLS applied and verified against a second account
 - [ ] Private storage bucket with signed URLs for any generated media

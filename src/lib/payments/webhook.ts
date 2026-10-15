@@ -21,8 +21,9 @@ export function verifyStripeSignature(rawBody: string, signature: string | null)
 }
 
 /**
- * Applies a verified Stripe event. Idempotent by event id: the same event
- * delivered twice changes nothing and reports `duplicate`.
+ * Applies a verified Stripe event. Idempotent by event id: the id is claimed
+ * before processing (so concurrent deliveries cannot double-process) and
+ * released again if the handler throws (so Stripe's retry is processed).
  */
 export async function handleStripeEvent(event: StripeEventLike): Promise<WebhookOutcome> {
   const store = getStore();
@@ -33,6 +34,17 @@ export async function handleStripeEvent(event: StripeEventLike): Promise<Webhook
 
   const { duplicate } = await store.payments.recordEvent(paymentEventRecord(event.id, "stripe", event.type, orderIdFromMeta, amount, currency));
   if (duplicate) return { handled: true, duplicate: true, orderId: orderIdFromMeta };
+  try {
+    return await applyStripeEvent(event, orderIdFromMeta, amount, currency);
+  } catch (err) {
+    await store.payments.deleteEvent(event.id);
+    throw err;
+  }
+}
+
+async function applyStripeEvent(event: StripeEventLike, orderIdFromMeta: string | null, amount: number | null, currency: string | null): Promise<WebhookOutcome> {
+  const store = getStore();
+  const obj = event.data.object;
 
   switch (event.type) {
     case "checkout.session.completed":
@@ -62,8 +74,7 @@ export async function handleStripeEvent(event: StripeEventLike): Promise<Webhook
     case "charge.refunded": {
       const paymentIntent = typeof obj.payment_intent === "string" ? obj.payment_intent : null;
       if (!paymentIntent) return { handled: false, reason: "no payment intent" };
-      const orders = await store.orders.listAll(undefined, 1000);
-      const order = orders.find((o) => o.stripePaymentIntentId === paymentIntent);
+      const order = await store.orders.getByPaymentIntent(paymentIntent);
       if (!order) return { handled: false, reason: "order not found" };
       if (obj.refunded === true) await recordRefund(order.id, null);
       return { handled: true, orderId: order.id };

@@ -253,6 +253,24 @@ export async function runJob(jobId: string, providers: ProviderSet = getProvider
   return store.jobs.update(job.id, { status: "succeeded", leaseUntil: null, nextRunAt: null, finishedAt: nowIso(), progressMessage: "Your gift is ready", usage });
 }
 
+/**
+ * Retention: removes drafts and failed gifts untouched for `days` (default 90),
+ * as promised in the privacy notice. Never touches ready/active/revoked gifts.
+ */
+export async function sweepAbandonedGifts(days = 90, limit = 100): Promise<string[]> {
+  const store = getStore();
+  const before = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+  const abandoned = await store.gifts.listAbandoned(before, limit);
+  const removed: string[] = [];
+  for (const gift of abandoned) {
+    if (await store.gifts.delete(gift.id)) {
+      removed.push(gift.id);
+      await store.audit.append({ id: newId(), at: nowIso(), actorId: null, action: "gift.retention_deleted", subjectType: "gift", subjectId: gift.id, meta: { status: gift.status } });
+    }
+  }
+  return removed;
+}
+
 /** Processes any due jobs (used by the cron endpoint and as a safety net). */
 export async function processDueJobs(limit = 5): Promise<string[]> {
   const store = getStore();

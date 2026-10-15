@@ -120,14 +120,24 @@ export interface Gift {
   updatedAt: string;
 }
 
-/** What the recipient page is allowed to see. No sender account data. */
+export type PublicScene = Pick<Scene, "id" | "order" | "heading" | "text" | "art">;
+
+export interface PublicStory {
+  title: string;
+  opening: string;
+  scenes: PublicScene[];
+  closing: string;
+  dedication: string;
+}
+
+/** What the recipient page is allowed to see. No sender account data, prompts or provenance. */
 export interface PublicGift {
   token: string;
   recipientName: string;
   senderName: string;
   occasion: OccasionId;
   theme: ThemeId;
-  story: Story;
+  story: PublicStory;
   audio: AudioAsset[];
   narrationEnabled: boolean;
 }

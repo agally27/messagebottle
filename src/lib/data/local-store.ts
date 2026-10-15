@@ -162,6 +162,15 @@ export class LocalStore implements DataStore {
       g.lastOpenedAt = at;
       this.schedulePersist();
     },
+    listAbandoned: async (beforeIso, limit) => {
+      await this.ensureLoaded();
+      return clone(
+        Object.values(this.db.gifts)
+          .filter((g) => (g.status === "draft" || g.status === "failed") && g.updatedAt < beforeIso)
+          .sort((a, b) => a.updatedAt.localeCompare(b.updatedAt))
+          .slice(0, limit),
+      );
+    },
   };
 
   jobs: DataStore["jobs"] = {
@@ -244,6 +253,10 @@ export class LocalStore implements DataStore {
       await this.ensureLoaded();
       return clone(Object.values(this.db.orders).find((o) => o.stripeCheckoutSessionId === sessionId) ?? null);
     },
+    getByPaymentIntent: async (paymentIntentId) => {
+      await this.ensureLoaded();
+      return clone(Object.values(this.db.orders).find((o) => o.stripePaymentIntentId === paymentIntentId) ?? null);
+    },
     listByOwner: async (ownerId) => {
       await this.ensureLoaded();
       return clone(Object.values(this.db.orders).filter((o) => o.ownerId === ownerId).sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
@@ -279,6 +292,11 @@ export class LocalStore implements DataStore {
       this.db.payments[event.id] = clone(event);
       this.schedulePersist();
       return { duplicate: false };
+    },
+    deleteEvent: async (id) => {
+      await this.ensureLoaded();
+      delete this.db.payments[id];
+      this.schedulePersist();
     },
   };
 

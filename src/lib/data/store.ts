@@ -32,6 +32,8 @@ export interface DataStore {
     update(id: string, patch: Partial<Gift>): Promise<Gift | null>;
     delete(id: string): Promise<boolean>;
     recordOpen(id: string, at: string): Promise<void>;
+    /** Drafts and failed gifts not touched since `beforeIso` (retention sweep). */
+    listAbandoned(beforeIso: string, limit: number): Promise<Gift[]>;
   };
 
   jobs: {
@@ -53,6 +55,7 @@ export interface DataStore {
     create(order: Order): Promise<Order>;
     get(id: string): Promise<Order | null>;
     getByCheckoutSession(sessionId: string): Promise<Order | null>;
+    getByPaymentIntent(paymentIntentId: string): Promise<Order | null>;
     listByOwner(ownerId: string): Promise<Order[]>;
     listByGift(giftId: string): Promise<Order[]>;
     listAll(filter?: { status?: OrderStatus; physicalOnly?: boolean }, limit?: number): Promise<Order[]>;
@@ -62,6 +65,8 @@ export interface DataStore {
   payments: {
     /** Records a provider event. `duplicate` is true if the event id was seen before. */
     recordEvent(event: PaymentEvent): Promise<{ duplicate: boolean }>;
+    /** Releases an event id after a failed handler so the provider's retry is processed. */
+    deleteEvent(id: string): Promise<void>;
   };
 
   audit: {

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { timingSafeEqual } from "node:crypto";
 import { env } from "@/lib/config/env";
-import { processDueJobs } from "@/lib/jobs/pipeline";
+import { processDueJobs, sweepAbandonedGifts } from "@/lib/jobs/pipeline";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -19,7 +19,9 @@ export async function POST(req: Request) {
   const b = Buffer.from(secret);
   if (a.length !== b.length || !timingSafeEqual(a, b)) return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
   const ran = await processDueJobs(5);
-  return NextResponse.json({ ran });
+  const url = new URL(req.url);
+  const sweep = url.searchParams.get("sweep") === "1" ? await sweepAbandonedGifts(env.DRAFT_RETENTION_DAYS) : [];
+  return NextResponse.json({ ran, sweptGifts: sweep });
 }
 
 export const GET = POST;

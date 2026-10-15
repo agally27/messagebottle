@@ -51,7 +51,9 @@ create table if not exists public.gifts (
 create index if not exists gifts_owner_updated_idx on public.gifts (owner_id, updated_at desc);
 create index if not exists gifts_status_idx on public.gifts (status);
 alter table public.gifts enable row level security;
-create policy "gifts: owner all" on public.gifts for all using (auth.uid() = owner_id) with check (auth.uid() = owner_id);
+-- Senders may READ their gifts directly; every write (status, story, token…) goes
+-- through the server with the service role so payment and validation cannot be bypassed.
+create policy "gifts: owner read" on public.gifts for select using (auth.uid() = owner_id);
 
 -- ── generation_jobs ─────────────────────────────────────────────────────────
 create table if not exists public.generation_jobs (
@@ -95,12 +97,16 @@ returns setof public.generation_jobs language sql security definer set search_pa
      and (next_run_at is null or next_run_at <= p_now)
   returning *;
 $$;
-revoke all on function public.claim_generation_job(uuid, timestamptz, timestamptz) from public;
+-- Server-only: Supabase grants EXECUTE to anon/authenticated by default; remove it.
+revoke execute on function public.claim_generation_job(uuid, timestamptz, timestamptz) from public, anon, authenticated;
+grant execute on function public.claim_generation_job(uuid, timestamptz, timestamptz) to service_role;
 
 -- ── orders ──────────────────────────────────────────────────────────────────
 create table if not exists public.orders (
   id uuid primary key default gen_random_uuid(),
   owner_id uuid not null references public.profiles (id) on delete cascade,
+  -- Paid orders block gift deletion at the application layer; cascade only ever
+  -- removes pending/cancelled orders.
   gift_id uuid not null references public.gifts (id) on delete cascade,
   status text not null default 'pending' check (status in ('pending', 'paid', 'fulfilling', 'dispatched', 'delivered', 'cancelled', 'refunded')),
   items jsonb not null,
@@ -120,6 +126,7 @@ create table if not exists public.orders (
 create index if not exists orders_owner_created_idx on public.orders (owner_id, created_at desc);
 create index if not exists orders_gift_idx on public.orders (gift_id);
 create index if not exists orders_status_idx on public.orders (status);
+create index if not exists orders_payment_intent_idx on public.orders (stripe_payment_intent_id);
 alter table public.orders enable row level security;
 create policy "orders: owner read" on public.orders for select using (auth.uid() = owner_id);
 -- Orders are created/updated by the server (checkout + webhooks) only.
@@ -189,7 +196,20 @@ begin
   update public.rate_limits set count = count + 1 where key = p_key;
   return query select true, p_limit - r.count - 1, r.reset_at;
 end $$;
-revoke all on function public.rate_limit_hit(text, integer, integer, timestamptz) from public;
+revoke execute on function public.rate_limit_hit(text, integer, integer, timestamptz) from public, anon, authenticated;
+grant execute on function public.rate_limit_hit(text, integer, integer, timestamptz) to service_role;
+
+-- Atomic open counter (called by the server when the recipient taps "Open").
+create or replace function public.record_gift_open(p_gift_id uuid, p_at timestamptz)
+returns void language sql security definer set search_path = public as $$
+  update public.gifts
+     set open_count = open_count + 1,
+         first_opened_at = coalesce(first_opened_at, p_at),
+         last_opened_at = p_at
+   where id = p_gift_id;
+$$;
+revoke execute on function public.record_gift_open(uuid, timestamptz) from public, anon, authenticated;
+grant execute on function public.record_gift_open(uuid, timestamptz) to service_role;
 
 -- ── storage ─────────────────────────────────────────────────────────────────
 -- Private bucket for generated media; the server issues signed URLs.

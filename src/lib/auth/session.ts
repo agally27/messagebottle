@@ -96,15 +96,17 @@ export async function getCurrentUser(): Promise<UserProfile | null> {
  * Creates a demo account and signs the caller in. Only callable from a Server
  * Action or Route Handler (cookies can be set there).
  */
-export async function signInDemoUser(displayName: string): Promise<UserProfile> {
+export async function signInDemoUser(displayName: string, opts: { adminSecret?: string } = {}): Promise<UserProfile> {
   if (!demoAuthEnabled()) throw new Error("Demo sign-in is disabled when Supabase Auth is configured.");
   const store = getStore();
+  // Admin is never derived from a user-supplied name: only from the configured secret.
+  const admin = Boolean(env.demoMode && env.DEMO_ADMIN_SECRET && opts.adminSecret && hmacVerify(env.DEMO_ADMIN_SECRET, "demo-admin", hmacSign(opts.adminSecret, "demo-admin")));
   const existing = await readDemoSession();
   if (existing) {
     const user = await store.users.get(existing.uid);
     if (user) {
-      if (displayName && displayName !== user.displayName) {
-        return store.users.upsert({ ...user, displayName, updatedAt: nowIso() });
+      if ((displayName && displayName !== user.displayName) || (admin && !user.isAdmin)) {
+        return store.users.upsert({ ...user, displayName: displayName || user.displayName, isAdmin: user.isAdmin || admin, updatedAt: nowIso() });
       }
       return user;
     }
@@ -114,8 +116,7 @@ export async function signInDemoUser(displayName: string): Promise<UserProfile> 
     id: newId(),
     email: null,
     displayName: displayName || "Guest",
-    // Demo mode only: a guest whose name is listed in ADMIN_EMAILS can reach /admin.
-    isAdmin: env.demoMode && env.adminEmails.includes((displayName || "").toLowerCase()),
+    isAdmin: admin,
     kind: "demo",
     createdAt: now,
     updatedAt: now,

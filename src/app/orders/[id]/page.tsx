@@ -79,7 +79,7 @@ export default async function OrderPage({ params }: PageProps<"/orders/[id]">) {
         <section className="mt-8 rounded-xl border border-line bg-paper p-5">
           <h2 className="text-xl">Share the story</h2>
           <div className="mt-4">
-            <SharePanel giftId={gift.id} status={gift.status} url={publicGiftUrl(gift)} recipientName={gift.input.recipientName} demoMode={env.demoMode} checkoutAvailable={env.stripeConfigured || demoCheckoutAvailable()} hasPaidOrder openCount={gift.openCount} lastOpenedAt={gift.lastOpenedAt} emailAvailable={env.emailConfigured} />
+            <SharePanel giftId={gift.id} status={gift.status} url={publicGiftUrl(gift)} recipientName={gift.input.recipientName} demoMode={demoCheckoutAvailable()} checkoutAvailable={env.stripeConfigured || demoCheckoutAvailable()} hasPaidOrder openCount={gift.openCount} lastOpenedAt={gift.lastOpenedAt} emailAvailable={env.emailConfigured} />
           </div>
         </section>
       ) : null}

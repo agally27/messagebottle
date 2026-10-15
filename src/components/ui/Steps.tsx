@@ -31,17 +31,18 @@ export function Steps({ steps, current, onSelect, maxReachable }: { steps: StepD
                   i + 1
                 )}
               </span>
-              <span className={cn("hidden text-sm sm:inline", state === "current" ? "font-semibold text-ink" : "text-text-muted")}>{step.label}</span>
+              <span className="sr-only">Step {i + 1}{state === "done" ? " (completed)" : state === "current" ? " (current)" : ""}: </span>
+              <span className={cn("sr-only text-sm sm:not-sr-only", state === "current" ? "font-semibold text-ink" : "text-text-muted")}>{step.label}</span>
             </>
           );
           return (
             <li key={step.id} className={cn("flex items-center gap-2 sm:gap-3", i < steps.length - 1 && "flex-1")}>
               {reachable ? (
-                <button type="button" onClick={() => onSelect?.(i)} className="flex items-center gap-2 rounded-full" aria-current={state === "current" ? "step" : undefined} aria-label={`Step ${i + 1}: ${step.label}`}>
+                <button type="button" onClick={() => onSelect?.(i)} className="flex items-center gap-2 rounded-full" aria-current={state === "current" ? "step" : undefined}>
                   {inner}
                 </button>
               ) : (
-                <span className="flex items-center gap-2" aria-current={state === "current" ? "step" : undefined} aria-label={`Step ${i + 1}: ${step.label}`}>
+                <span className="flex items-center gap-2" aria-current={state === "current" ? "step" : undefined}>
                   {inner}
                 </span>
               )}

@@ -10,6 +10,8 @@ const schema = z.object({
   NEXT_PUBLIC_APP_URL: z.string().url().default("http://localhost:3000"),
   SESSION_SECRET: z.string().min(16).optional(),
   DEMO_MODE: z.enum(["true", "false"]).default("false"),
+  // Demo mode only: a guest who supplies this secret on the login page becomes an admin.
+  DEMO_ADMIN_SECRET: z.string().min(8).optional(),
 
   DATA_BACKEND: z.enum(["auto", "supabase", "local", "memory"]).default("auto"),
   LOCAL_DATA_DIR: z.string().default(".data"),
@@ -33,6 +35,7 @@ const schema = z.object({
   GENERATION_RATE_LIMIT_PER_HOUR: z.coerce.number().int().positive().default(5),
   DEMO_STEP_DELAY_MS: z.coerce.number().int().min(0).max(10_000).default(900),
   JOBS_SECRET: z.string().min(16).optional(),
+  DRAFT_RETENTION_DAYS: z.coerce.number().int().min(1).max(3650).default(90),
 
   STRIPE_SECRET_KEY: z.string().min(1).optional(),
   STRIPE_WEBHOOK_SECRET: z.string().min(1).optional(),

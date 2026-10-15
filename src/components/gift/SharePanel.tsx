@@ -13,6 +13,7 @@ interface Props {
   status: GiftStatus;
   url: string;
   recipientName: string;
+  /** True only when demo checkout is available (DEMO_MODE and no Stripe keys). */
   demoMode: boolean;
   checkoutAvailable: boolean;
   hasPaidOrder: boolean;

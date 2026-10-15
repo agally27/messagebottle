@@ -6,6 +6,8 @@ import { Field, Input } from "@/components/ui/Field";
 import { Notice } from "@/components/ui/Notice";
 import { demoSignInAction } from "@/lib/actions/auth";
 import { demoAuthEnabled, getCurrentUser } from "@/lib/auth/session";
+import { env } from "@/lib/config/env";
+import { safeNextPath } from "@/lib/utils/redirects";
 import { MagicLinkForm } from "./MagicLinkForm";
 
 export const metadata: Metadata = { title: "Sign in", robots: { index: false } };
@@ -13,7 +15,7 @@ export const dynamic = "force-dynamic";
 
 export default async function LoginPage({ searchParams }: PageProps<"/login">) {
   const sp = await searchParams;
-  const next = typeof sp.next === "string" && sp.next.startsWith("/") ? sp.next : "/dashboard";
+  const next = safeNextPath(sp.next, env.appUrl);
   const user = await getCurrentUser();
   if (user) redirect(next);
   const demo = demoAuthEnabled();
@@ -30,6 +32,16 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
             <Field id="name" label="Your name">
               <Input id="name" name="name" placeholder="Tom" maxLength={40} autoComplete="given-name" required />
             </Field>
+            {env.DEMO_ADMIN_SECRET ? (
+              <details className="text-sm">
+                <summary className="cursor-pointer text-text-muted">Operator sign-in</summary>
+                <div className="mt-3">
+                  <Field id="adminSecret" label="Demo admin secret" hint="Grants access to /admin in this demo environment.">
+                    <Input id="adminSecret" name="adminSecret" type="password" autoComplete="off" />
+                  </Field>
+                </div>
+              </details>
+            ) : null}
             <Button type="submit" size="lg" fullWidth>
               Continue as guest
             </Button>

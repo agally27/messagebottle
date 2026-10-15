@@ -4,14 +4,17 @@ import { redirect } from "next/navigation";
 import { demoAuthEnabled, signInDemoUser, signOut } from "@/lib/auth/session";
 import { env } from "@/lib/config/env";
 
+import { safeNextPath } from "@/lib/utils/redirects";
+
 function safeNext(next: unknown): string {
-  return typeof next === "string" && next.startsWith("/") && !next.startsWith("//") ? next : "/dashboard";
+  return safeNextPath(next, env.appUrl);
 }
 
 export async function demoSignInAction(formData: FormData): Promise<void> {
   if (!demoAuthEnabled()) redirect("/login");
   const name = String(formData.get("name") ?? "").trim().slice(0, 40) || "Guest";
-  await signInDemoUser(name);
+  const adminSecret = String(formData.get("adminSecret") ?? "").trim() || undefined;
+  await signInDemoUser(name, { adminSecret });
   redirect(safeNext(formData.get("next")));
 }
 

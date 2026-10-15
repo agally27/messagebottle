@@ -24,7 +24,7 @@ export async function generateMetadata({ params }: PageProps<"/g/[token]">): Pro
  */
 export default async function RecipientPage({ params }: PageProps<"/g/[token]">) {
   const { token } = await params;
-  const gift = await getPublicGift(token, { recordOpen: true });
+  const gift = await getPublicGift(token);
   if (!gift) {
     return (
       <main className="flex min-h-dvh flex-col items-center justify-center bg-ink px-6 py-20 text-center text-text-on-dark">

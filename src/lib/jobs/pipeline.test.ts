@@ -154,10 +154,12 @@ describe("public access", () => {
     const ready = (await getStore().gifts.get(gift.id))!;
     expect(await getPublicGift(ready.publicToken)).toBeNull(); // ready but not activated
     await activateGift(ready, "demo");
-    const pub = await getPublicGift(ready.publicToken, { recordOpen: true });
+    const pub = await getPublicGift(ready.publicToken);
     expect(pub?.recipientName).toBe("Maya");
     expect(JSON.stringify(pub)).not.toContain(user.id);
     expect(JSON.stringify(pub)).not.toContain(gift.id);
+    const { recordGiftOpen } = await import("@/lib/gifts/service");
+    expect(await recordGiftOpen(ready.publicToken)).toBe(true);
     expect((await getStore().gifts.get(gift.id))?.openCount).toBe(1);
     await revokeGift(ready);
     expect(await getPublicGift(ready.publicToken)).toBeNull();
@@ -182,10 +184,66 @@ describe("public access", () => {
     expect(edited.story?.provenance.editedBySender).toBe(true);
   });
 
+  it("never regenerates a finished gift, and refuses to delete one with a paid order", async () => {
+    const gift = await createGift(user, input);
+    await startGeneration(user, gift, { runInline: true });
+    const ready = (await getStore().gifts.get(gift.id))!;
+    await expect(startGeneration(user, ready, { runInline: true })).rejects.toThrow(/already been created/);
+    const { createPendingOrder, markOrderPaid } = await import("@/lib/orders/service");
+    const { deleteGift } = await import("@/lib/gifts/service");
+    const order = await createPendingOrder(user, ready, { productId: "digital" });
+    await markOrderPaid(order.id, { provider: "demo", amountMinor: 499, currency: "GBP" });
+    await expect(deleteGift(ready)).rejects.toThrow(/paid order/);
+    expect(await getStore().gifts.get(gift.id)).not.toBeNull();
+  });
+
+  it("public projection omits prompts, provenance and anything about the account", async () => {
+    const gift = await createGift(user, input);
+    await startGeneration(user, gift, { runInline: true });
+    const ready = (await getStore().gifts.get(gift.id))!;
+    await activateGift(ready, "demo");
+    const pub = (await getPublicGift(ready.publicToken))!;
+    const json = JSON.stringify(pub);
+    expect(json).not.toContain("artPrompt");
+    expect(json).not.toContain("provenance");
+    expect(json).not.toContain("ownerId");
+    expect(pub.story.scenes.map((s) => s.order)).toEqual(pub.story.scenes.map((_, i) => i));
+  });
+
+  it("settings edits with explicit undefined never erase existing values", async () => {
+    const gift = await createGift(user, input);
+    await startGeneration(user, gift, { runInline: true });
+    const ready = (await getStore().gifts.get(gift.id))!;
+    const { applyGiftSettings } = await import("@/lib/gifts/service");
+    const edited = await applyGiftSettings(ready, { recipientName: undefined, theme: "ocean" });
+    expect(edited.input.recipientName).toBe("Maya");
+    expect(edited.input.theme).toBe("ocean");
+  });
+
   it("ownership is enforced by id and owner, not by id alone", async () => {
     const gift = await createGift(user, input);
     const { requireOwnedGift } = await import("@/lib/auth/guards");
     await expect(requireOwnedGift(gift.id, other)).rejects.toThrow(/not found/i);
     await expect(requireOwnedGift(gift.id, user)).resolves.toMatchObject({ id: gift.id });
+  });
+});
+
+describe("retention sweep", () => {
+  it("removes old drafts and failed gifts but never finished ones", async () => {
+    await (getStore() as LocalStore).reset();
+    setProvidersForTests(localProviders());
+    const store = getStore();
+    const old = new Date(Date.now() - 100 * 24 * 3600 * 1000).toISOString();
+    const draft = await createGift(user, input);
+    await store.gifts.update(draft.id, { status: "draft" });
+    const ready = await createGift(user, input);
+    await startGeneration(user, ready, { runInline: true });
+    // Backdate both.
+    const { sweepAbandonedGifts } = await import("./pipeline");
+    (store as LocalStore)["db"].gifts[draft.id]!.updatedAt = old;
+    (store as LocalStore)["db"].gifts[ready.id]!.updatedAt = old;
+    const removed = await sweepAbandonedGifts(90);
+    expect(removed).toEqual([draft.id]);
+    expect(await store.gifts.get(ready.id)).not.toBeNull();
   });
 });

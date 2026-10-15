@@ -55,6 +55,10 @@ export async function createGift(user: UserProfile, rawInput: unknown, opts: { p
  */
 export async function startGeneration(user: UserProfile, gift: Gift, opts: { runInline?: boolean } = {}): Promise<GenerationJob> {
   const store = getStore();
+  // Never regenerate a finished gift: it would overwrite sender edits and take a live link dark.
+  if (gift.status === "ready" || gift.status === "active" || gift.status === "revoked") {
+    throw new AuthError(404, "This gift has already been created. Edit it instead of regenerating.");
+  }
   const latest = await store.jobs.getLatestForGift(gift.id);
   if (latest && (latest.status === "queued" || latest.status === "running")) {
     if (opts.runInline) await runJob(latest.id);
@@ -135,7 +139,9 @@ export async function applyStoryEdits(gift: Gift, raw: unknown): Promise<Gift> {
 
 /** Changes that don't need regeneration: names, theme, music, narration. */
 export async function applyGiftSettings(gift: Gift, raw: unknown): Promise<Gift> {
-  const edits = giftSettingsEditSchema.parse(raw);
+  const parsed = giftSettingsEditSchema.parse(raw);
+  // Zod keeps explicit `undefined` keys; never let them erase existing values.
+  const edits = Object.fromEntries(Object.entries(parsed).filter(([, v]) => v !== undefined)) as typeof parsed;
   const input: GiftInput = { ...gift.input, ...edits };
   let story = gift.story;
   let audio = gift.audio;
@@ -176,6 +182,10 @@ export async function regenerateLink(gift: Gift): Promise<Gift> {
 }
 
 export async function deleteGift(gift: Gift): Promise<void> {
+  const orders = await getStore().orders.listByGift(gift.id);
+  if (orders.some((o) => o.status !== "pending" && o.status !== "cancelled")) {
+    throw new AuthError(403, "This gift has a paid order attached. Revoke the link instead, or contact support to remove it.");
+  }
   await getStore().gifts.delete(gift.id);
   await audit("gift.deleted", "gift", gift.id, gift.ownerId);
 }
@@ -184,17 +194,26 @@ export async function deleteGift(gift: Gift): Promise<void> {
  * The recipient's view. Returns null for unknown, inactive, revoked or expired
  * links. Strips everything that isn't needed to show the gift.
  */
-export async function getPublicGift(token: string, opts: { recordOpen?: boolean } = {}): Promise<PublicGift | null> {
+export async function getPublicGift(token: string): Promise<PublicGift | null> {
   if (!isPlausibleToken(token)) return null;
-  const store = getStore();
-  const gift = await store.gifts.getByPublicToken(token);
+  const gift = await getStore().gifts.getByPublicToken(token);
   if (!gift || !gift.story) return null;
   if (gift.status !== "active") return null;
   if (gift.expiresAt && gift.expiresAt < nowIso()) return null;
-  if (opts.recordOpen) await store.gifts.recordOpen(gift.id, nowIso());
   return toPublicGift(gift);
 }
 
+/** Counts an open when the recipient taps "Open the bottle" (not on page load, so link previews don't count). */
+export async function recordGiftOpen(token: string): Promise<boolean> {
+  if (!isPlausibleToken(token)) return false;
+  const store = getStore();
+  const gift = await store.gifts.getByPublicToken(token);
+  if (!gift || gift.status !== "active") return false;
+  await store.gifts.recordOpen(gift.id, nowIso());
+  return true;
+}
+
+/** Projection with only what the player renders: no prompts, provenance, ids or account data. */
 export function toPublicGift(gift: Gift): PublicGift {
   if (!gift.story) throw new Error("gift has no story");
   return {
@@ -203,7 +222,13 @@ export function toPublicGift(gift: Gift): PublicGift {
     senderName: gift.input.senderName,
     occasion: gift.input.occasion,
     theme: gift.input.theme,
-    story: gift.story,
+    story: {
+      title: gift.story.title,
+      opening: gift.story.opening,
+      scenes: [...gift.story.scenes].sort((a, b) => a.order - b.order).map((s) => ({ id: s.id, order: s.order, heading: s.heading, text: s.text, art: s.art })),
+      closing: gift.story.closing,
+      dedication: gift.story.dedication,
+    },
     audio: gift.audio,
     narrationEnabled: gift.input.narration,
   };

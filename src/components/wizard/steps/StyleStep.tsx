@@ -11,7 +11,7 @@ export function StyleStep({ input, update }: StepProps) {
   const ordered = [...THEMES].sort((a, b) => (suggested.includes(a.id) ? 0 : 1) - (suggested.includes(b.id) ? 0 : 1));
   return (
     <div>
-      <StepHeader eyebrow="Step 4" title="Choose the look" intro="The style sets the colours, the illustrations, the type and the way scenes move. Suggested styles for this occasion come first." />
+      <StepHeader eyebrow="Step 5" title="Choose the look" intro="The style sets the colours, the illustrations, the type and the way scenes move. Suggested styles for this occasion come first." />
       <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3" role="radiogroup" aria-label="Visual style">
         {ordered.map((t, i) => (
           <OptionCard

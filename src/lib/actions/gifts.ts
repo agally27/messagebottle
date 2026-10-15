@@ -39,7 +39,8 @@ export async function createGiftAction(rawInput: unknown, options: { productId?:
   } catch (err) {
     return fail(err);
   }
-  redirect(`/gifts/${giftId}/generating`);
+  // The client uploads any photos, then navigates to the generating screen.
+  return { ok: true, data: { giftId } };
 }
 
 export async function retryGenerationAction(giftId: string): Promise<ActionResult<{ jobId: string }>> {
@@ -154,4 +155,30 @@ export async function deleteGiftAction(giftId: string): Promise<ActionResult> {
   }
   revalidatePath("/dashboard");
   redirect("/dashboard");
+}
+
+export async function editPhotosAction(giftId: string, edits: unknown): Promise<ActionResult> {
+  try {
+    const user = await requireUser();
+    const gift = await requireOwnedGift(giftId, user);
+    const { editPhotos } = await import("@/lib/gifts/photos");
+    await editPhotos(gift, edits);
+    revalidatePath(`/gifts/${giftId}`);
+    return { ok: true, data: undefined };
+  } catch (err) {
+    return fail(err);
+  }
+}
+
+export async function removePhotoAction(giftId: string, photoId: string): Promise<ActionResult> {
+  try {
+    const user = await requireUser();
+    const gift = await requireOwnedGift(giftId, user);
+    const { removePhoto } = await import("@/lib/gifts/photos");
+    await removePhoto(gift, photoId);
+    revalidatePath(`/gifts/${giftId}`);
+    return { ok: true, data: undefined };
+  } catch (err) {
+    return fail(err);
+  }
 }

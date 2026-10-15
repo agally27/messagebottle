@@ -18,7 +18,7 @@ const key = process.env.SUPABASE_TEST_KEY;
 const users = (process.env.SUPABASE_TEST_USERS ?? "").split(",").filter(Boolean);
 const enabled = Boolean(url && key && users.length >= 2);
 
-const input: GiftInput = { occasion: "birthday", customOccasion: "", recipientName: "Maya", relationship: "my sister", pronouns: "she", ageRange: "adult", recipientContext: "", senderName: "Tom", message: "Happy birthday, Maya. You have always been the brave one. I am so proud of you, and I always will be.", memories: "", datesAndPlaces: "", tone: "celebratory", transformation: "story", theme: "storybook", music: "piano", narration: false };
+const input: GiftInput = { occasion: "birthday", customOccasion: "", recipientName: "Maya", relationship: "my sister", pronouns: "she", ageRange: "adult", recipientContext: "", senderName: "Tom", message: "Happy birthday, Maya. You have always been the brave one. I am so proud of you, and I always will be.", memories: "", datesAndPlaces: "", tone: "celebratory", transformation: "story", theme: "storybook", music: "piano", narration: false, songUrl: "", rememberedName: "", rememberedDates: "" };
 
 describe.skipIf(!enabled)("SupabaseStore (integration)", () => {
   let store: SupabaseStore;
@@ -55,6 +55,10 @@ describe.skipIf(!enabled)("SupabaseStore (integration)", () => {
     expect((await store.gifts.listByOwner(b.id)).some((g) => g.id === gift.id)).toBe(false);
     const updated = await store.gifts.update(gift.id, { status: "failed" });
     expect(updated?.status).toBe("failed");
+    expect((await store.gifts.get(gift.id))?.photos).toEqual([]); // 0002_photos default
+    const photo = { id: randomUUID(), storageKey: `gifts/${gift.id}/photos/p.jpg`, contentType: "image/jpeg", width: 1600, height: 1200, bytes: 1234, caption: "Leeds", year: 2004, order: 0, createdAt: now };
+    await store.gifts.update(gift.id, { photos: [photo] });
+    expect((await store.gifts.get(gift.id))?.photos).toEqual([photo]);
     await store.gifts.recordOpen(gift.id, now);
     await store.gifts.recordOpen(gift.id, now);
     expect((await store.gifts.get(gift.id))?.openCount).toBe(2);

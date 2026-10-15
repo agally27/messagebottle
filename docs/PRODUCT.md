@@ -26,6 +26,7 @@ Remembrance is handled with particular care: gentle language, no celebratory opt
 | Little Bottle | + glass keepsake bottle, printed rolled message, ribbon, QR card, gift packaging | £16.99 + £3.95 UK delivery |
 | Keepsake Gift Box | + lined gift box, printed story booklet, dedication card | £34.99, delivery included |
 
+| Memory Bottle | + the Little Bottle, with three of the gift's photos as mini prints tied alongside with twine; needs at least one photo | £24.99 + £3.95 UK delivery |
 | Christmas Bottle (seasonal, 1 Oct – 18 Dec) | Christmas card printed and rolled inside, red ribbon and faux holly, lightly scented card (winter spice, fireside pine or unscented), QR to the story with a personalised carol | £19.99 + £3.95 UK delivery |
 
 Prices are configuration (`src/lib/config/products.ts`). Before going live, validate against generation costs, payment fees, materials, packaging, fulfilment, shipping, returns and VAT. No supplier, stock or delivery promises exist yet; physical fulfilment starts manual (admin view, print-ready message, QR code).
@@ -42,3 +43,12 @@ A seasonal occasion and product. Choosing Christmas defaults to the **Winter won
 The physical Christmas Bottle is only sold inside its window (`season` in `src/lib/config/products.ts`, UK dates); the landing and pricing pages show its section only then and refresh hourly.
 
 Before selling: source the scented paper or fragrance from a supplier who provides UK CLP / allergen information, label the packaging accordingly, and keep an unscented option. Confirm last posting dates with the carrier each year; the site deliberately makes no delivery-by-Christmas promise.
+
+## Memory in a Bottle
+For gifts made of shared history: two people who met years ago, a friendship, a family, or someone who has died. Any gift can carry:
+- **Photos** — up to 12, each with an optional caption and year. Photos with years show as a then-and-now timeline in the story ("Moments worth keeping"). They are re-encoded on upload (resized, metadata including location removed) and shown only through the gift's private link.
+- **A song** — a link from Spotify, Apple Music, YouTube, SoundCloud, Deezer or TIDAL becomes an "Our song" moment near the end. It plays through the service's own official player, which loads only when the recipient taps play; we never host or copy music. Deezer and TIDAL open in their app.
+- **In loving memory** — for remembrance gifts, the person's name and years, shown gently on the opening, the keepsake screen and the printed card. The story never speaks as the person who has died.
+
+The **Memory Bottle** prints the first three photos (in the order the sender sets) as mini prints, tied to the bottle with twine. Checkout refuses it until the gift has at least one photo. Before selling: choose a print supplier and paper, and check print quality at the 1600 px stored size.
+

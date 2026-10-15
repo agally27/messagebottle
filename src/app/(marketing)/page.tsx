@@ -1,6 +1,7 @@
 import { BrandMoment } from "@/components/marketing/BrandMoment";
 import { ChristmasSection } from "@/components/marketing/ChristmasSection";
 import { Experience } from "@/components/marketing/Experience";
+import { MemorySection } from "@/components/marketing/MemorySection";
 import { InsideTheBox } from "@/components/marketing/InsideTheBox";
 import { FAQ } from "@/components/marketing/FAQ";
 import { FinalCta } from "@/components/marketing/FinalCta";
@@ -17,6 +18,7 @@ export default function HomePage() {
       <HowItWorks />
       <InsideTheBox />
       <Experience />
+      <MemorySection />
       <Occasions />
       <Products />
       <BrandMoment />

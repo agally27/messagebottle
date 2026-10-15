@@ -39,7 +39,7 @@ function frames(b: ContentBrief): Frames {
     firstSceneLead: [T`Here is what ${s} wanted you to know.`, T`In ${s}'s own words:`],
     memoryLead: [T`There's a moment ${s} keeps coming back to.`, T`${s} wanted to remember this one with you.`],
     closingLead: [T`So, ${n} — this is the part that matters most.`, T`And this is where ${s} wanted to leave you:`],
-    signoffs: [T`With love,\n${s}`, T`Always,\n${s}`, T`— ${s}${forRel ? `\n(${rel.replace(/^my /, "your ")})` : ""}`],
+    signoffs: [T`With love,\n${s}`, T`Always,\n${s}`, T`— ${s}`],
   };
 
   if (child) {
@@ -179,7 +179,12 @@ export function writeLocalStory(brief: ContentBrief): StoryDraft {
   const closingCount = sentences.length >= 6 ? 2 : 1;
   const closingSentences = sentences.slice(-closingCount);
   const bodySentences = sentences.slice(0, Math.max(0, sentences.length - closingCount));
-  const body = bodySentences.length ? bodySentences : sentences;
+  let body = bodySentences.length ? bodySentences : sentences;
+  // A story needs at least two scenes: split a lone sentence at its natural pauses (words unchanged).
+  if (body.length === 1) {
+    const clauses = body[0]!.split(/(?<=[,;:—–])\s+/u).filter(Boolean);
+    if (clauses.length >= 2) body = clauses;
+  }
 
   const targetScenes = Math.max(2, Math.min(5, Math.ceil(body.length / 2.5)));
   const groups = chunk(body, targetScenes);
@@ -208,6 +213,13 @@ export function writeLocalStory(brief: ContentBrief): StoryDraft {
     };
     // Place the memory scene just after the first scene, or at the end for short messages.
     scenes.splice(Math.min(1, scenes.length), 0, scene);
+  }
+
+  if (scenes.length < 2) {
+    // Nothing left to split: add a quiet framing scene rather than inventing anything.
+    const text = brief.ageRange === "child" ? T`${brief.senderName} made this so you can read it again whenever you like.` : T`${brief.senderName} wanted these words kept somewhere you can come back to, ${brief.recipientName}.`;
+    const heading = brief.transformation === "close" ? "" : (headings[1] ?? "");
+    scenes.push({ heading, text, artPrompt: artPromptFor(text, heading, brief) });
   }
 
   let closing = closingSentences.join(" ");

@@ -27,7 +27,7 @@ export default async function CheckoutPage({ params, searchParams }: PageProps<"
       <h1 className="mt-2 text-3xl sm:text-4xl">Checkout</h1>
       {sp.cancelled ? <Notice tone="info" className="mt-4">Payment was cancelled. Nothing has been charged; pick up where you left off.</Notice> : null}
       <div className="mt-8">
-        <CheckoutForm giftId={gift.id} products={listProducts()} initialProductId={initialProduct} recipientName={gift.input.recipientName} mode={mode} />
+        <CheckoutForm giftId={gift.id} products={listProducts()} initialProductId={initialProduct} recipientName={gift.input.recipientName} mode={mode} photoCount={gift.photos?.length ?? 0} />
       </div>
     </AppShell>
   );

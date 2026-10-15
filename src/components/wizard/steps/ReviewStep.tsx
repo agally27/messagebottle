@@ -4,18 +4,20 @@ import { getMusicMood } from "@/lib/domain/music";
 import { getOccasion } from "@/lib/domain/occasions";
 import { getTheme } from "@/lib/domain/themes";
 import { getTone } from "@/lib/domain/tones";
+import { parseSongLink } from "@/lib/domain/song";
 import { getProduct, formatPrice } from "@/lib/config/products";
 import type { StepProps } from "../CreateWizard";
 import { StepHeader } from "./StepHeader";
 
-export function ReviewStep({ input, goTo, demoMode, signedIn, productId }: StepProps & { goTo: (i: number) => void; demoMode: boolean; signedIn: boolean; productId: string | null }) {
+export function ReviewStep({ input, goTo, demoMode, signedIn, productId, photoCount }: StepProps & { goTo: (i: number) => void; demoMode: boolean; signedIn: boolean; productId: string | null; photoCount: number }) {
+  const song = parseSongLink(input.songUrl);
   const occasion = getOccasion(input.occasion);
   const theme = getTheme(input.theme);
   const product = productId ? getProduct(productId) : null;
   const transformation = { close: "Keep my words as they are", story: "Shape it into a story", poetic: "Make it more poetic" }[input.transformation];
   return (
     <div>
-      <StepHeader eyebrow="Step 6" title="Ready to create it?" intro="Check everything once more. Nothing is sent until you've previewed the finished gift and chosen to share it." />
+      <StepHeader eyebrow="Step 7" title="Ready to create it?" intro="Check everything once more. Nothing is sent until you've previewed the finished gift and chosen to share it." />
       <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_320px]">
         <dl className="divide-y divide-line rounded-xl border border-line bg-paper">
           <Row label="Occasion" onEdit={() => goTo(0)}>
@@ -32,10 +34,21 @@ export function ReviewStep({ input, goTo, demoMode, signedIn, productId }: StepP
             {input.datesAndPlaces ? <p className="mt-1 text-sm text-text-muted"><span className="font-semibold text-ink">Date / place:</span> {input.datesAndPlaces}</p> : null}
             <p className="mt-2 text-sm text-text-muted">{getTone(input.tone).label} · {transformation}</p>
           </Row>
-          <Row label="Look" onEdit={() => goTo(3)}>
+          <Row label="Memories" onEdit={() => goTo(3)}>
+            {photoCount || song || input.rememberedName ? (
+              <span className="text-[0.95rem]">
+                {input.rememberedName ? <span className="block">In loving memory of {input.rememberedName}{input.rememberedDates ? `, ${input.rememberedDates}` : ""}</span> : null}
+                {photoCount ? <span className="block">{photoCount} photo{photoCount === 1 ? "" : "s"}</span> : null}
+                {song ? <span className="block">Song on {song.providerName}</span> : null}
+              </span>
+            ) : (
+              <span className="text-text-muted">None added</span>
+            )}
+          </Row>
+          <Row label="Look" onEdit={() => goTo(4)}>
             {theme.name}
           </Row>
-          <Row label="Sound" onEdit={() => goTo(4)}>
+          <Row label="Sound" onEdit={() => goTo(5)}>
             {getMusicMood(input.music).label}
             {input.narration ? " · narration offered" : ""}
           </Row>

@@ -23,7 +23,7 @@ const base: GiftInput = {
   transformation: "story",
   theme: "ocean",
   music: "piano",
-  narration: false,
+  narration: false, songUrl: "", rememberedName: "", rememberedDates: "",
 };
 
 describe("splitSentences", () => {
@@ -36,6 +36,24 @@ describe("splitSentences", () => {
 });
 
 describe("local story writer", () => {
+  it("always makes at least two valid scenes, even from a very short message, without changing its words", () => {
+    for (const message of ["You spilled a drink on my coat in Leeds. I still have the coat.", "Thank you, for everything you did that winter", "Thank you for everything you did that winter"]) {
+      for (const memories of ["", "The pier."]) {
+        const draft = writeLocalStory(buildBrief({ ...base, message, memories }));
+        expect(storyDraftSchema.safeParse(draft).success).toBe(true);
+        const all = [...draft.scenes.map((s) => s.text), draft.closing].join(" ").replace(/\s+/g, " ");
+        for (const word of message.split(" ")) expect(all).toContain(word);
+      }
+    }
+  });
+
+  it("signs off as the sender, never inverting the relationship", () => {
+    for (let seed = 0; seed < 12; seed++) {
+      const draft = writeLocalStory({ ...buildBrief({ ...base, relationship: "my husband" }), seed });
+      expect(draft.closing).not.toMatch(/\(your /);
+    }
+  });
+
   it("produces a valid, personalised draft that keeps every sentence", () => {
     const brief = buildBrief(base);
     const draft = writeLocalStory(brief);

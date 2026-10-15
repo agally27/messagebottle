@@ -9,6 +9,7 @@ import { GiftPlayer } from "@/components/gift/GiftPlayer";
 import { GenerationProgress } from "@/components/gift/GenerationProgress";
 import { StoryEditor } from "@/components/gift/StoryEditor";
 import { GiftSettings } from "@/components/gift/GiftSettings";
+import { MemoriesEditor } from "@/components/gift/MemoriesEditor";
 import { SharePanel } from "@/components/gift/SharePanel";
 import { DeleteGiftButton } from "@/components/gift/DeleteGiftButton";
 import { requireUserOrRedirect } from "@/lib/auth/guards";
@@ -61,7 +62,7 @@ export default async function GiftPage({ params }: PageProps<"/gifts/[id]">) {
     );
   }
 
-  const publicGift = toPublicGift(gift);
+  const publicGift = toPublicGift(gift, { preview: true });
 
   return (
     <AppShell className="max-w-6xl">
@@ -73,7 +74,7 @@ export default async function GiftPage({ params }: PageProps<"/gifts/[id]">) {
             <Badge tone={status.tone}>{status.label}</Badge>
             <span>{theme.name}</span>
             <span aria-hidden>·</span>
-            <span>{gift.story.scenes.length} scenes</span>
+            <span>{gift.story.scenes.length} scenes{publicGift.photos.length ? `, ${publicGift.photos.length} ${publicGift.photos.length === 1 ? "photo" : "photos"}` : ""}</span>
             <span aria-hidden>·</span>
             <span>Written {gift.story.provenance.provider === "local" ? "from your words" : `with ${gift.story.provenance.provider}`}{gift.story.provenance.editedBySender ? ", edited by you" : ""}</span>
           </p>
@@ -115,6 +116,14 @@ export default async function GiftPage({ params }: PageProps<"/gifts/[id]">) {
             <p className="mt-1 text-sm text-text-muted">Change anything. Saving is instant and never regenerates the artwork.</p>
             <div className="mt-5">
               <StoryEditor giftId={gift.id} story={gift.story} />
+            </div>
+          </section>
+
+          <section aria-labelledby="memories-heading">
+            <h2 id="memories-heading" className="text-2xl">Photos, song and dedication</h2>
+            <p className="mt-1 text-sm text-text-muted">Optional. Changes show in the preview straight away.</p>
+            <div className="mt-5">
+              <MemoriesEditor giftId={gift.id} photos={publicGift.photos} songUrl={gift.input.songUrl ?? ""} rememberedName={gift.input.rememberedName ?? ""} rememberedDates={gift.input.rememberedDates ?? ""} remembrance={gift.input.occasion === "remembrance"} />
             </div>
           </section>
 

@@ -30,7 +30,7 @@ const input: GiftInput = {
   transformation: "story",
   theme: "storybook",
   music: "celebratory",
-  narration: false,
+  narration: false, songUrl: "", rememberedName: "", rememberedDates: "",
 };
 
 function localProviders(story: StoryProvider = new LocalStoryProvider()): ProviderSet {

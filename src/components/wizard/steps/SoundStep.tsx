@@ -36,7 +36,7 @@ export function SoundStep({ input, update }: StepProps) {
 
   return (
     <div>
-      <StepHeader eyebrow="Step 5" title="Choose the sound" intro="Music plays softly behind the story once the recipient taps to begin. They can pause or mute at any time." />
+      <StepHeader eyebrow="Step 6" title="Choose the sound" intro="Music plays softly behind the story once the recipient taps to begin. They can pause or mute at any time." />
       <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2" role="radiogroup" aria-label="Music">
         {moods.map((m) => (
           <div key={m.id} className="relative">

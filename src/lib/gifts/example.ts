@@ -21,7 +21,7 @@ export const EXAMPLE_INPUT: GiftInput = {
   transformation: "story",
   theme: "ocean",
   music: "piano",
-  narration: true,
+  narration: true, songUrl: "", rememberedName: "", rememberedDates: "",
 };
 
 export function buildExampleGift(): PublicGift {
@@ -43,5 +43,8 @@ export function buildExampleGift(): PublicGift {
     },
     audio: [{ kind: "music", source: { type: "procedural", mood: "piano" }, provider: "procedural", label: "Gentle piano", disclosure: "Demonstration soundtrack, generated on your device from the chosen mood." }],
     narrationEnabled: true,
+    photos: [],
+    song: null,
+    inMemoryOf: null,
   };
 }

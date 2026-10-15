@@ -45,6 +45,10 @@ async function fillWizard(page: Page, opts: { recipient?: string; sender?: strin
   await shot(page, "wizard-3-message");
   await page.getByRole("button", { name: "Continue" }).click();
 
+  // Photos and song are optional.
+  await expect(page.getByRole("heading", { name: /add photos and your song/i })).toBeVisible();
+  await page.getByRole("button", { name: "Continue" }).click();
+
   await expect(page.getByRole("heading", { name: /choose the look/i })).toBeVisible();
   await choose(page, /watercolour memories/i);
   await page.getByRole("button", { name: "Continue" }).click();
@@ -64,7 +68,7 @@ test.describe("marketing", () => {
     await expect(page.getByRole("heading", { level: 1 })).toContainText(/feeling/i);
     await expect(page.getByRole("link", { name: "Create your gift" }).first()).toBeVisible();
     await expect(page.getByRole("link", { name: /open an example/i }).first()).toBeVisible();
-    await expect(page.getByText(/£4\.99/)).toBeVisible();
+    await expect(page.getByText("£4.99", { exact: true })).toBeVisible();
   });
 
   test("example gift can be opened and read to the end", async ({ page }) => {
@@ -298,6 +302,7 @@ test.describe("christmas", () => {
     await page.getByRole("button", { name: "Continue" }).click();
     await page.getByLabel("Your message", { exact: true }).fill("Merry Christmas from all of us. We miss your kitchen and your terrible cracker jokes. See you on Boxing Day.");
     await page.getByRole("button", { name: "Continue" }).click();
+    await page.getByRole("button", { name: "Continue" }).click(); // photos & song (optional)
     await expect(page.getByRole("radio", { name: /winter wonderland/i })).toBeChecked();
     await page.getByRole("button", { name: "Continue" }).click();
     await expect(page.getByRole("radio", { name: /silent night/i })).toBeChecked();
@@ -311,3 +316,100 @@ test.describe("christmas", () => {
     await shot(page, "christmas-gift");
   });
 });
+
+test.describe("memory in a bottle", () => {
+  test("photos and a song travel from the wizard to the recipient; the Memory Bottle prints them", async ({ page, browser }) => {
+    await page.goto("/create?occasion=memories&product=memory-bottle");
+    await expect(page.getByRole("radio", { name: /^memories/i })).toBeChecked();
+    await page.getByRole("button", { name: "Continue" }).click();
+    await page.getByLabel(/their first name/i).fill("Sam");
+    await page.getByLabel(/who they are to you/i).fill("my husband");
+    await page.getByLabel(/your name, as you'd sign it/i).fill("Ana");
+    await page.getByRole("button", { name: "Continue" }).click();
+    await page.getByLabel("Your message", { exact: true }).fill("Twenty years ago you spilled a drink on my coat at a party in Leeds, and spent the rest of the night apologising. I still have the coat. I still have you.");
+    await page.getByRole("button", { name: "Continue" }).click();
+
+    await expect(page.getByRole("heading", { name: /add photos and your song/i })).toBeVisible();
+    await page.getByTestId("photo-input").setInputFiles([
+      { name: "leeds.png", mimeType: "image/png", buffer: Buffer.from(PNG_RED, "base64") },
+      { name: "now.png", mimeType: "image/png", buffer: Buffer.from(PNG_BLUE, "base64") },
+    ]);
+    await expect(page.getByRole("img", { name: /photo 2/i })).toBeVisible();
+    await page.getByLabel("Caption for photo 1").fill("The party in Leeds");
+    await page.getByLabel("Year for photo 1").fill("2004");
+    await page.getByLabel("Link to the song").fill("https://open.spotify.com/track/4uLU6hMCjMI75M1A2tKUQC");
+    await expect(page.getByText(/spotify link added/i)).toBeVisible();
+    await shot(page, "wizard-4-memories");
+    await page.getByRole("button", { name: "Continue" }).click();
+    await page.getByRole("button", { name: "Continue" }).click();
+    await page.getByRole("button", { name: "Continue" }).click();
+    await expect(page.getByText(/2 photos/i)).toBeVisible();
+    await page.getByRole("button", { name: /create my gift/i }).click();
+    await expect(page).toHaveURL(/\/gifts\/[0-9a-f-]+$/, { timeout: 60_000 });
+    const giftId = page.url().split("/").pop()!;
+    await expect(page.getByRole("heading", { name: /photos, song and dedication/i })).toBeVisible();
+    await expect(page.getByLabel("Caption for photo 1")).toHaveValue("The party in Leeds");
+
+    // Memory Bottle checkout (demo) with the photos printed.
+    await page.goto(`/checkout/${giftId}?product=memory-bottle`);
+    await expect(page.getByRole("radio", { name: /memory bottle/i })).toBeChecked();
+    await expect(page.getByText(/print the first 2 photos/i)).toBeVisible();
+    await page.getByLabel("Name", { exact: true }).fill("Sam");
+    await page.getByLabel(/address line 1/i).fill("1 Harbour Lane");
+    await page.getByLabel(/town or city/i).fill("Whitby");
+    await page.getByLabel(/postcode/i).fill("YO21 1AA");
+    await page.getByRole("button", { name: /continue \(demo payment\)/i }).click();
+    await page.getByRole("button", { name: /confirm demo payment of £28\.94/i }).click();
+    await expect(page).toHaveURL(/\/orders\/[0-9a-f-]+/);
+    const fullLink = await page.getByLabel("Private gift link").inputValue();
+    const link = new URL(fullLink).pathname;
+
+    await page.goto(`/gifts/${giftId}/print`);
+    await expect(page.getByRole("region", { name: /mini photo prints/i }).getByRole("img")).toHaveCount(2);
+
+    // The recipient sees the photos as a timeline and can open the song.
+    const ctx = await browser.newContext();
+    const rp = await ctx.newPage();
+    await rp.goto(link);
+    await expect(rp.getByText(/2 photos/)).toBeVisible();
+    await rp.getByRole("button", { name: /open the bottle/i }).click();
+    await expect(rp.getByRole("button", { name: "Next" })).toBeVisible({ timeout: 10_000 });
+    for (let i = 0; i < 10 && !(await rp.locator('[data-stage="photos"]').isVisible()); i++) await rp.getByRole("button", { name: "Next" }).click();
+    const photos = rp.getByRole("list", { name: "Photos" }).getByRole("img");
+    await expect(photos).toHaveCount(2);
+    await expect(photos.first()).toHaveAttribute("alt", "The party in Leeds");
+    await expect.poll(() => photos.first().evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0)).toBe(true);
+    expect(await photos.first().getAttribute("src")).toMatch(new RegExp(`^/api/g/[A-Za-z0-9_-]{40,}/photos/`));
+    await shot(rp, "recipient-photos");
+    await rp.getByRole("button", { name: "Next" }).click();
+    await expect(rp.getByText(/ana chose a song for you/i)).toBeVisible();
+    await expect(rp.locator("iframe")).toHaveCount(0); // nothing loads from Spotify until they tap
+    await expect(rp.getByRole("link", { name: /open in spotify/i })).toHaveAttribute("href", "https://open.spotify.com/track/4uLU6hMCjMI75M1A2tKUQC");
+    await rp.getByRole("button", { name: /play it here/i }).click();
+    await expect(rp.locator('iframe[src="https://open.spotify.com/embed/track/4uLU6hMCjMI75M1A2tKUQC"]')).toHaveCount(1);
+    await shot(rp, "recipient-song");
+    await ctx.close();
+  });
+
+  test("remembrance shows the dedication gently", async ({ page }) => {
+    await page.goto("/create?occasion=remembrance");
+    await page.getByRole("button", { name: "Continue" }).click();
+    await page.getByLabel(/their first name/i).fill("Mum");
+    await page.getByLabel(/who they are to you/i).fill("my mum");
+    await page.getByLabel(/your name, as you'd sign it/i).fill("Leo");
+    await page.getByRole("button", { name: "Continue" }).click();
+    await page.getByLabel("Your message", { exact: true }).fill("Dad would have been eighty today. I keep thinking about the way he whistled in the garden, and how you always pretended it annoyed you.");
+    await page.getByRole("button", { name: "Continue" }).click();
+    await expect(page.getByRole("heading", { name: /photos and a song to remember them by/i })).toBeVisible();
+    await page.getByLabel("In loving memory of").fill("Arthur Bell");
+    await page.getByLabel("Their years").fill("1944 – 2023");
+    for (let i = 0; i < 3; i++) await page.getByRole("button", { name: "Continue" }).click();
+    await page.getByRole("button", { name: /create my gift/i }).click();
+    await expect(page).toHaveURL(/\/gifts\/[0-9a-f-]+$/, { timeout: 60_000 });
+    await expect(page.locator('[data-stage="closed"]').getByText(/in loving memory of arthur bell, 1944 – 2023/i)).toBeVisible();
+  });
+});
+
+/** 64×48 solid-colour PNGs. */
+const PNG_RED = "iVBORw0KGgoAAAANSUhEUgAAAEAAAAAwCAIAAAAuKetIAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAAfUlEQVRoge2SwQ0AQRCCrI73lU1ZV4aZrAkFgDF+nCZ1AxdAfUV3Ie6SuoELoL6iuxB3Sd3ABVBf0V2Iu6Ru4AKor+guxF1SN3AB1Fd0F+IuqRu4AOorugtxl9QNXAD1Fd2FuEvqBi6A+oruQtwldQMXQH1FdyHukrqBjwf8Yk9o8Z5sqscAAAAASUVORK5CYII=";
+const PNG_BLUE = "iVBORw0KGgoAAAANSUhEUgAAAEAAAAAwCAIAAAAuKetIAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAAfUlEQVRoge2SAQkAURSDls5MF9FYF2M8/sAAOhY+T5O6AQuwviK7kHdJ3YAFWF+RXci7pG7AAqyvyC7kXVI3YAHWV2QX8i6pG7AA6yuyC3mX1A1YgPUV2YW8S+oGLMD6iuxC3iV1AxZgfUV2Ie+SugELsL4iu5B3Sd2AxwN+LpxJD8Olc9oAAAAASUVORK5CYII=";

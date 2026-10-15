@@ -38,5 +38,7 @@ Restrained. Entrance: `Reveal` fades sections up once on scroll (always visible 
 ## Recipient experience
 Dark or light theme per visual style; a translucent panel keeps text legible over any artwork; the bottle glows and lights drift upward on dark themes; audio starts only on the "Open the bottle" tap; controls for pause, mute and read-aloud; keyboard arrows move between parts.
 
+Memories: photos appear as white-bordered polaroids with a slight tilt and a Caveat caption, the year in small Manrope; "Our song" is a card with a single "Play it here" button, never an autoplaying embed; "In loving memory of…" is set in italic Fraunces at a muted tone, never bold or decorative. The landing section uses drawn scene art inside the polaroids, not customer photos.
+
 ## Accessibility
 axe WCAG A/AA scans run in the e2e suite on the main screens. Decorative SVGs are `aria-hidden`; informative ones carry titles. Targets are ≥ 44 px. Focus rings are visible on every control.

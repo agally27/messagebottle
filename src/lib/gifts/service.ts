@@ -2,6 +2,8 @@ import "server-only";
 import { env } from "@/lib/config/env";
 import { getProduct } from "@/lib/config/products";
 import { getMusicMood, musicDisclosure } from "@/lib/domain/music";
+import { parseSongLink } from "@/lib/domain/song";
+import { deleteGiftMedia, photosOf } from "./photos";
 import { getStore } from "@/lib/data";
 import type { GenerationJob, Gift, GiftInput, PublicGift, Story, UserProfile } from "@/lib/domain/types";
 import { giftInputSchema, giftSettingsEditSchema, storyEditSchema } from "@/lib/domain/schemas";
@@ -34,6 +36,7 @@ export async function createGift(user: UserProfile, rawInput: unknown, opts: { p
     input,
     story: null,
     audio: [],
+    photos: [],
     publicToken: newPublicToken(),
     productId,
     openCount: 0,
@@ -187,6 +190,7 @@ export async function deleteGift(gift: Gift): Promise<void> {
   if (orders.some((o) => o.status !== "pending" && o.status !== "cancelled")) {
     throw new AuthError(403, "This gift has a paid order attached. Revoke the link instead, or contact support to remove it.");
   }
+  await deleteGiftMedia(gift);
   await getStore().gifts.delete(gift.id);
   await audit("gift.deleted", "gift", gift.id, gift.ownerId);
 }
@@ -214,9 +218,15 @@ export async function recordGiftOpen(token: string): Promise<boolean> {
   return true;
 }
 
-/** Projection with only what the player renders: no prompts, provenance, ids or account data. */
-export function toPublicGift(gift: Gift): PublicGift {
+/**
+ * Projection with only what the player renders: no prompts, provenance, ids or account data.
+ * `preview` (sender's own view) serves photos through the owner-checked route, because the
+ * public route only works once the link is active.
+ */
+export function toPublicGift(gift: Gift, opts: { preview?: boolean } = {}): PublicGift {
   if (!gift.story) throw new Error("gift has no story");
+  const song = parseSongLink(gift.input.songUrl ?? "");
+  const rememberedName = (gift.input.rememberedName ?? "").trim();
   return {
     token: gift.publicToken,
     recipientName: gift.input.recipientName,
@@ -232,6 +242,16 @@ export function toPublicGift(gift: Gift): PublicGift {
     },
     audio: gift.audio,
     narrationEnabled: gift.input.narration,
+    photos: photosOf(gift).map((p) => ({
+      id: p.id,
+      url: opts.preview ? `/api/gifts/${gift.id}/photos/${p.id}` : `/api/g/${gift.publicToken}/photos/${p.id}`,
+      caption: p.caption,
+      year: p.year,
+      width: p.width,
+      height: p.height,
+    })),
+    song: song ? { provider: song.provider, providerName: song.providerName, url: song.url, embedUrl: song.embedUrl } : null,
+    inMemoryOf: rememberedName ? { name: rememberedName, dates: (gift.input.rememberedDates ?? "").trim() } : null,
   };
 }
 

@@ -26,6 +26,9 @@ export const DEFAULT_INPUT: GiftInput = {
   theme: "ocean",
   music: "piano",
   narration: false,
+  songUrl: "",
+  rememberedName: "",
+  rememberedDates: "",
 };
 
 export function loadDraft(): WizardDraft | null {

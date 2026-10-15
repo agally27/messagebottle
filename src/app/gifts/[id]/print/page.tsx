@@ -4,6 +4,7 @@ import QRCode from "qrcode";
 import { requireUserOrRedirect } from "@/lib/auth/guards";
 import { getStore } from "@/lib/data";
 import { publicGiftUrl } from "@/lib/gifts/service";
+import { photosOf } from "@/lib/gifts/photos";
 import { BottleMark } from "@/components/ui/Logo";
 
 export const metadata: Metadata = { title: "Print", robots: { index: false } };
@@ -13,6 +14,7 @@ export const dynamic = "force-dynamic";
  * Print-ready insert for the physical bottle: the sender's original message,
  * the sign-off, and a QR code to the digital story. Owner or admin only.
  * Designed for an A5 sheet (or two inserts per A4), to be rolled and tied.
+ * Gifts with photos get a second sheet of three mini prints (Memory Bottle).
  */
 export default async function PrintPage({ params }: PageProps<"/gifts/[id]/print">) {
   const { id } = await params;
@@ -22,6 +24,8 @@ export default async function PrintPage({ params }: PageProps<"/gifts/[id]/print
   const url = publicGiftUrl(gift);
   const qr = await QRCode.toDataURL(url, { width: 360, margin: 1, errorCorrectionLevel: "M", color: { dark: "#14213dff", light: "#ffffff00" } });
   const christmas = gift.input.occasion === "christmas";
+  const prints = photosOf(gift).slice(0, 3);
+  const inMemory = gift.input.rememberedName ? [gift.input.rememberedName, gift.input.rememberedDates].filter(Boolean).join(", ") : "";
   const paragraphs = gift.input.message.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
   return (
     <div className="min-h-dvh bg-white text-ink font-sans">
@@ -42,6 +46,7 @@ export default async function PrintPage({ params }: PageProps<"/gifts/[id]/print
           {christmas ? <p className="mt-8 font-hand text-4xl text-[#b8403a]">Merry Christmas</p> : null}
           <p className={`${christmas ? "mt-3" : "mt-10"} text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-teal`}>For {gift.input.recipientName}</p>
           <h1 className="mt-2 font-display text-[1.75rem] leading-tight">{gift.story?.title ?? `A message for ${gift.input.recipientName}`}</h1>
+          {inMemory ? <p className="mt-2 font-display text-sm italic text-text-muted">In loving memory of {inMemory}</p> : null}
           <section className="mt-8 space-y-4 font-display text-[1.02rem] leading-[1.7]">
             {paragraphs.map((p, i) => (
               <p key={i}>{p}</p>
@@ -64,6 +69,23 @@ export default async function PrintPage({ params }: PageProps<"/gifts/[id]/print
             </div>
           </footer>
         </main>
+        {prints.length ? (
+          <section className="mx-auto max-w-[148mm] break-before-page px-6 pb-16 pt-10 print:px-0 print:pt-0" aria-label="Mini photo prints">
+            <p className="no-print text-xs text-text-muted">Mini prints · cut along the edges, tie with twine alongside the bottle.</p>
+            <div className="mt-4 flex flex-wrap gap-[6mm]">
+              {prints.map((p, i) => (
+                <figure key={p.id} className="w-[54mm] border border-dashed border-line-strong bg-white p-[3mm] pb-[4mm]">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={`/api/gifts/${gift.id}/photos/${p.id}`} alt={p.caption || `Photo ${i + 1}`} className="aspect-square w-full object-cover" />
+                  <figcaption className="mt-[2mm] font-hand text-base leading-tight text-ink">
+                    {p.year ? <span className="mr-1 font-sans text-[0.6rem] font-semibold text-text-muted">{p.year}</span> : null}
+                    {p.caption}
+                  </figcaption>
+                </figure>
+              ))}
+            </div>
+          </section>
+        ) : null}
     </div>
   );
 }

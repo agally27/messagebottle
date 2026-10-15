@@ -15,9 +15,10 @@ interface Props {
   initialProductId: string;
   recipientName: string;
   mode: "stripe" | "demo" | "unavailable";
+  photoCount: number;
 }
 
-export function CheckoutForm({ giftId, products, initialProductId, recipientName, mode }: Props) {
+export function CheckoutForm({ giftId, products, initialProductId, recipientName, mode, photoCount }: Props) {
   const [productId, setProductId] = useState(products.some((p) => p.id === initialProductId) ? initialProductId : products[0]!.id);
   const [address, setAddress] = useState({ name: "", line1: "", line2: "", city: "", postcode: "", country: "GB", giftNote: "" });
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -26,6 +27,7 @@ export function CheckoutForm({ giftId, products, initialProductId, recipientName
   const [pending, startTransition] = useTransition();
   const product = products.find((p) => p.id === productId)!;
   const total = product.priceMinor + (product.requiresShipping ? product.shippingMinor : 0);
+  const needsPhotos = (product.minPhotos ?? 0) > photoCount;
 
   const submit = () => {
     setError(null);
@@ -69,6 +71,15 @@ export function CheckoutForm({ giftId, products, initialProductId, recipientName
           </fieldset>
         ) : null}
 
+        {needsPhotos ? (
+          <Notice tone="warning" title="Add a photo first">
+            The {product.name} includes mini prints of your gift&apos;s photos, and this gift has none yet.{" "}
+            <a href={`/gifts/${giftId}#memories-heading`} className="font-semibold underline underline-offset-4">Add photos to the gift</a>, then come back.
+          </Notice>
+        ) : product.minPhotos ? (
+          <p className="text-sm text-text-muted">We&apos;ll print the first {Math.min(3, photoCount)} {Math.min(3, photoCount) === 1 ? "photo" : "photos"} in your gift&apos;s order. You can reorder them on the gift page.</p>
+        ) : null}
+
         {product.requiresShipping ? (
           <fieldset className="space-y-4">
             <legend className="text-lg font-semibold text-ink">Delivery address (UK)</legend>
@@ -109,7 +120,7 @@ export function CheckoutForm({ giftId, products, initialProductId, recipientName
           {mode === "unavailable" ? (
             <Notice tone="warning">Payments aren&apos;t configured on this deployment yet.</Notice>
           ) : (
-            <Button onClick={submit} disabled={pending} fullWidth size="lg">
+            <Button onClick={submit} disabled={pending || needsPhotos} fullWidth size="lg">
               {pending ? "One moment…" : mode === "stripe" ? "Continue to secure payment" : "Continue (demo payment)"}
             </Button>
           )}

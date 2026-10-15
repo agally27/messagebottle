@@ -14,7 +14,7 @@ import { handleStripeEvent } from "./webhook";
 
 const user: UserProfile = { id: "user-1", email: null, displayName: "Tom", isAdmin: false, kind: "demo", createdAt: "", updatedAt: "" };
 const admin: UserProfile = { ...user, id: "admin-1", isAdmin: true };
-const input: GiftInput = { occasion: "thank-you", customOccasion: "", recipientName: "Priya", relationship: "my friend", pronouns: "she", ageRange: "adult", recipientContext: "", senderName: "Tom", message: "Thank you for driving three hours to sit with me in that waiting room. You didn't say much. You didn't need to. I will never forget it.", memories: "", datesAndPlaces: "", tone: "heartfelt", transformation: "story", theme: "minimal", music: "peaceful", narration: false };
+const input: GiftInput = { occasion: "thank-you", customOccasion: "", recipientName: "Priya", relationship: "my friend", pronouns: "she", ageRange: "adult", recipientContext: "", senderName: "Tom", message: "Thank you for driving three hours to sit with me in that waiting room. You didn't say much. You didn't need to. I will never forget it.", memories: "", datesAndPlaces: "", tone: "heartfelt", transformation: "story", theme: "minimal", music: "peaceful", narration: false, songUrl: "", rememberedName: "", rememberedDates: "" };
 
 async function readyGift() {
   const gift = await createGift(user, input);

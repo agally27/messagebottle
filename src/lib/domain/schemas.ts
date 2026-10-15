@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { parseSongLink } from "./song";
 import { MUSIC_MOOD_IDS } from "./music";
 import { OCCASION_IDS } from "./occasions";
 import { THEME_IDS } from "./themes";
@@ -16,6 +17,10 @@ export const LIMITS = {
   messageMax: 2500,
   memories: 1200,
   datesAndPlaces: 300,
+  rememberedName: 60,
+  rememberedDates: 40,
+  photoCaption: 140,
+  maxPhotos: 12,
 } as const;
 
 const giftInputBase = z.object({
@@ -35,6 +40,9 @@ const giftInputBase = z.object({
   theme: z.enum(THEME_IDS),
   music: z.enum(MUSIC_MOOD_IDS),
   narration: z.boolean().default(false),
+  songUrl: trimmed(400).default("").refine((v) => v === "" || parseSongLink(v) !== null, "Paste a link from Spotify, Apple Music, YouTube, SoundCloud, Deezer or TIDAL."),
+  rememberedName: trimmed(LIMITS.rememberedName).default(""),
+  rememberedDates: trimmed(LIMITS.rememberedDates).default(""),
 });
 
 function requireCustomOccasion(value: { occasion: string; customOccasion: string }, ctx: z.RefinementCtx) {
@@ -61,6 +69,7 @@ export const stepSchemas = {
   message: giftInputBase.pick({ message: true, memories: true, datesAndPlaces: true, tone: true, transformation: true }),
   style: giftInputBase.pick({ theme: true }),
   sound: giftInputBase.pick({ music: true, narration: true }),
+  memories: giftInputBase.pick({ songUrl: true, rememberedName: true, rememberedDates: true }),
 } as const;
 
 /** Sender edits after generation. All optional; validated server-side. */
@@ -83,12 +92,29 @@ export const storyEditSchema = z.object({
   sceneOrder: z.array(z.string().min(1).max(64)).max(12).optional(),
 });
 
+export const photoEditSchema = z.object({
+  photos: z
+    .array(
+      z.object({
+        id: z.string().min(1).max(64),
+        caption: trimmed(LIMITS.photoCaption).default(""),
+        year: z.number().int().min(1850).max(2100).nullable().default(null),
+      }),
+    )
+    .max(LIMITS.maxPhotos),
+  /** New order of photo ids (must be a permutation). */
+  order: z.array(z.string().min(1).max(64)).max(LIMITS.maxPhotos).optional(),
+});
+
 export const giftSettingsEditSchema = z.object({
   recipientName: trimmed(LIMITS.recipientName).min(1).optional(),
   senderName: trimmed(LIMITS.senderName).min(1).optional(),
   theme: z.enum(THEME_IDS).optional(),
   music: z.enum(MUSIC_MOOD_IDS).optional(),
   narration: z.boolean().optional(),
+  songUrl: trimmed(400).refine((v) => v === "" || parseSongLink(v) !== null, "Paste a link from Spotify, Apple Music, YouTube, SoundCloud, Deezer or TIDAL.").optional(),
+  rememberedName: trimmed(LIMITS.rememberedName).optional(),
+  rememberedDates: trimmed(LIMITS.rememberedDates).optional(),
 });
 
 export const shippingAddressSchema = z.object({

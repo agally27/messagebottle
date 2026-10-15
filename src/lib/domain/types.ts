@@ -27,6 +27,26 @@ export interface GiftInput {
   theme: ThemeId;
   music: MusicMoodId;
   narration: boolean;
+  /** Link to "our song" on a music service (see domain/song.ts). */
+  songUrl: string;
+  /** Remembrance: the person being remembered, and their years. */
+  rememberedName: string;
+  rememberedDates: string;
+}
+
+/** A photo the sender added. Stored privately; served only through token- or owner-checked routes. */
+export interface GiftPhoto {
+  id: string;
+  storageKey: string;
+  contentType: string;
+  width: number;
+  height: number;
+  bytes: number;
+  caption: string;
+  /** Optional year, for a then-and-now timeline. */
+  year: number | null;
+  order: number;
+  createdAt: string;
 }
 
 /* ── Story ─────────────────────────────────────────────────────────────────── */
@@ -107,6 +127,8 @@ export interface Gift {
   input: GiftInput;
   story: Story | null;
   audio: AudioAsset[];
+  /** Absent on gifts created before photos existed; treat as []. */
+  photos?: GiftPhoto[];
   /** Unguessable token used in the recipient URL. Never a database id. */
   publicToken: string;
   /** Selected product (catalogue id). */
@@ -141,6 +163,9 @@ export interface PublicGift {
   story: PublicStory;
   audio: AudioAsset[];
   narrationEnabled: boolean;
+  photos: Array<{ id: string; url: string; caption: string; year: number | null; width: number; height: number }>;
+  song: { provider: string; providerName: string; url: string; embedUrl: string | null } | null;
+  inMemoryOf: { name: string; dates: string } | null;
 }
 
 /* ── Generation jobs ───────────────────────────────────────────────────────── */
@@ -230,6 +255,8 @@ export interface Product {
   season?: { from: string; until: string; label: string };
   /** Fragrance choices for scented products; one must be chosen at checkout. */
   scentOptions?: Array<{ id: string; label: string; notes: string }>;
+  /** Physical products that print the gift's photos need at least this many. */
+  minPhotos?: number;
 }
 
 export interface ShippingAddress {

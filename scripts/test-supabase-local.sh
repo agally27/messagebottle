@@ -19,8 +19,10 @@ trap cleanup EXIT
 sleep 1
 PSQL="psql -h $WORK -p $PORT -U postgres -v ON_ERROR_STOP=1 -q"
 $PSQL -f "$ROOT/supabase/test-stubs.sql"
-$PSQL -f "$ROOT/supabase/migrations/0001_init.sql" >/dev/null 2>&1
-$PSQL -f "$ROOT/supabase/migrations/0001_init.sql" >/dev/null 2>&1 && echo "migration applies and re-applies cleanly"
+for pass in 1 2; do
+  for m in "$ROOT"/supabase/migrations/*.sql; do $PSQL -f "$m" >/dev/null 2>&1; done
+done
+echo "migrations apply and re-apply cleanly"
 
 if [ ! -x "$WORK/../postgrest-$PGRST_VERSION" ]; then
   curl -sSL "https://github.com/PostgREST/postgrest/releases/download/$PGRST_VERSION/postgrest-$PGRST_VERSION-linux-static-x64.tar.xz" | tar -xJ -C "$(dirname "$WORK")"

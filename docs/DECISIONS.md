@@ -40,3 +40,10 @@ The founder's mood board set the direction (golden hour, kraft, glowing bottle, 
 
 ### 13. Supabase rather than Neon
 Both host Postgres well. The app already relies on Supabase Auth (magic links), Storage (private bucket for generated media) and RLS tied to `auth.uid()`. Neon would need a separate auth provider and storage, more moving parts for no gain at this stage. The `DataStore` interface keeps a later move possible.
+
+### 14. Song links play through the service's own player
+Licensing makes hosting or clipping commercial music a non-starter. A gift stores a link from an allowlisted music service and shows that service's official embed, loaded only after the recipient taps play (no third-party requests or cookies before then). Full-track playback depends on the recipient's own account with that service, which the wizard says plainly.
+
+### 15. Photos are re-encoded and served through the app, not storage URLs
+Storing the original upload would keep EXIF location and camera data. Every photo is decoded and re-encoded server-side, and both views (recipient by token, owner/admin by id) stream it through an authorised route, so revoking a link or deleting a gift immediately stops access; there are no long-lived signed URLs to leak.
+

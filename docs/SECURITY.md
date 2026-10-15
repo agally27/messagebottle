@@ -29,10 +29,17 @@ Personal messages are intimate. This document states what the code does today an
 - Input limits on every field (zod), no HTML rendering of user text.
 - Security headers in `next.config.ts` (nosniff, referrer policy, frame options, permissions policy).
 
+## Photos and song links
+- Uploads are re-encoded server-side with sharp (auto-rotate, max 1600 px, JPEG, all metadata including EXIF/GPS dropped); anything sharp cannot decode is rejected, and SVG or other non-raster types are refused. The browser also shrinks photos before upload (Vercel's ~4.5 MB request limit); the server caps the body at 4.4 MB and 80 uploads per sender per hour, 12 photos per gift.
+- Files live in the private `gift-assets` bucket (or `.data/media` locally) under `gifts/<gift id>/photos/<random id>.jpg`, written and read only with the server key. There are no public or signed storage URLs.
+- The recipient's photo route (`/api/g/<token>/photos/<id>`) serves only for an **active, unexpired** gift reached by its token, with `Cache-Control: private` and `noindex`; the public projection never contains the gift id or storage keys. The owner/admin route (`/api/gifts/<id>/photos/<id>`) is used for the sender's preview, the editor and print.
+- Removing a photo, deleting a gift and the retention sweep delete the stored files.
+- Song links are allowlisted by host (https only) and normalised; embeds use each service's official player URL (YouTube via `youtube-nocookie.com`), load only after the recipient taps play, and run in a sandboxed iframe.
+
 ## Privacy
 - Logs contain ids, statuses, codes and timings — never message text, names or addresses.
 - Audit events store ids and small structured metadata only.
-- Deleting a gift removes its story, scenes, audio references and jobs.
+- Deleting a gift removes its story, scenes, audio references, photos and jobs.
 - Gift content is sent to AI providers only to fulfil that gift, and only when a provider is configured; this is disclosed in the privacy notice.
 
 ## Review log

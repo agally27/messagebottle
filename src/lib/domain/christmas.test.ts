@@ -40,7 +40,7 @@ const input: GiftInput = {
   occasion: "christmas", customOccasion: "", recipientName: "Grandma and Grandad", relationship: "my grandparents", pronouns: "they", ageRange: "older",
   recipientContext: "", senderName: "the Gally family",
   message: "Merry Christmas from all of us. We miss your kitchen, your terrible cracker jokes and your enormous trifle. We will be with you on Boxing Day, and we cannot wait.",
-  memories: "", datesAndPlaces: "", tone: "heartfelt", transformation: "story", theme: "winter", music: "carol-silent-night", narration: false,
+  memories: "", datesAndPlaces: "", tone: "heartfelt", transformation: "story", theme: "winter", music: "carol-silent-night", narration: false, songUrl: "", rememberedName: "", rememberedDates: "",
 };
 
 describe("Christmas story", () => {

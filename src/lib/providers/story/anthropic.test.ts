@@ -19,7 +19,7 @@ vi.mock("@anthropic-ai/sdk", () => {
 });
 vi.mock("@anthropic-ai/sdk/helpers/zod", () => ({ zodOutputFormat: (schema: unknown) => ({ type: "json_schema", schema }) }));
 
-const input: GiftInput = { occasion: "birthday", customOccasion: "", recipientName: "Maya", relationship: "my sister", pronouns: "she", ageRange: "adult", recipientContext: "", senderName: "Tom", message: "Happy birthday, Maya. You have always been the brave one. I am so proud of you.", memories: "", datesAndPlaces: "", tone: "celebratory", transformation: "story", theme: "storybook", music: "piano", narration: false };
+const input: GiftInput = { occasion: "birthday", customOccasion: "", recipientName: "Maya", relationship: "my sister", pronouns: "she", ageRange: "adult", recipientContext: "", senderName: "Tom", message: "Happy birthday, Maya. You have always been the brave one. I am so proud of you.", memories: "", datesAndPlaces: "", tone: "celebratory", transformation: "story", theme: "storybook", music: "piano", narration: false, songUrl: "", rememberedName: "", rememberedDates: "" };
 
 describe("AnthropicStoryProvider", () => {
   beforeEach(() => {

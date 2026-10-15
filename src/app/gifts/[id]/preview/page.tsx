@@ -17,7 +17,7 @@ export default async function PreviewPage({ params }: PageProps<"/gifts/[id]/pre
   if (!gift.story) redirect(`/gifts/${id}`);
   return (
     <GiftPlayer
-      gift={toPublicGift(gift)}
+      gift={toPublicGift(gift, { preview: true })}
       preview
       banner={
         <Link href={`/gifts/${id}`} className="inline-flex items-center rounded-full bg-paper/90 px-3.5 py-1.5 text-xs font-semibold text-ink shadow-soft backdrop-blur hover:bg-paper">

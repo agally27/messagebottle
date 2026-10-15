@@ -48,6 +48,28 @@ export const PRODUCTS: readonly Product[] = [
     sort: 2,
   },
   {
+    id: "memory-bottle",
+    kind: "physical",
+    name: "Memory Bottle",
+    tagline: "Your message and three of your photos, tied together in a bottle.",
+    description:
+      "Your message printed and rolled inside a glass keepsake bottle, with three of the gift's photos printed as mini prints and tied alongside with twine. A QR card opens the full story, every photo and your song.",
+    features: [
+      "Everything in the Little Bottle",
+      "Three mini photo prints from your gift, tied with twine",
+      "QR card that opens the story, photos and song",
+      "Gentle remembrance wording when it's in someone's memory",
+    ],
+    priceMinor: 2499,
+    currency: "GBP",
+    shippingMinor: 395,
+    requiresShipping: true,
+    badge: "Memories",
+    available: true,
+    sort: 3,
+    minPhotos: 1,
+  },
+  {
     id: "keepsake-box",
     kind: "physical",
     name: "Keepsake Gift Box",
@@ -66,7 +88,7 @@ export const PRODUCTS: readonly Product[] = [
     requiresShipping: true,
     badge: "Premium",
     available: true,
-    sort: 3,
+    sort: 4,
   },
   {
     id: "christmas-bottle",

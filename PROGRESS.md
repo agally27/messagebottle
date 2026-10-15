@@ -21,9 +21,9 @@ Functional development build. In demo mode (no credentials) the complete journey
 | --- | --- | --- |
 | Types | `pnpm typecheck` | pass |
 | Lint | `pnpm lint` | pass, 0 warnings |
-| Unit | `pnpm test` | 34 tests pass (story writer, quality, pipeline retries/failures/idempotency/rate limit, regeneration and deletion guards, public projection, retention sweep, safe redirects, ownership, pricing, webhook idempotency/retry/mismatch, refunds, fulfilment transitions) |
-| Build | `pnpm build` | pass (29 routes) |
-| E2E | `pnpm test:e2e` | 30 pass (8 journeys + 7 axe scans, × mobile + desktop): landing, example reveal, full sender journey incl. stranger access 404 and revoke, draft persistence, invalid links, auth redirect, open-redirect refusal, demo checkout (digital + physical with address validation), print page + QR, non-admin blocked, admin fulfilment to dispatched; axe WCAG A/AA with no serious/critical violations on landing, pricing, wizard, login, support, example (closed and opened) |
+| Unit | `pnpm test` | 61 tests pass (5 Supabase integration tests skipped without a database; run with `pnpm test:supabase`). Original 34 covered (story writer, quality, pipeline retries/failures/idempotency/rate limit, regeneration and deletion guards, public projection, retention sweep, safe redirects, ownership, pricing, webhook idempotency/retry/mismatch, refunds, fulfilment transitions) |
+| Build | `pnpm build` | pass |
+| E2E | `pnpm test:e2e` | 36 pass (11 journeys + 7 axe scans, × mobile + desktop), adding Christmas, memory and remembrance journeys to the original set: landing, example reveal, full sender journey incl. stranger access 404 and revoke, draft persistence, invalid links, auth redirect, open-redirect refusal, demo checkout (digital + physical with address validation), print page + QR, non-admin blocked, admin fulfilment to dispatched; axe WCAG A/AA with no serious/critical violations on landing, pricing, wizard, login, support, example (closed and opened) |
 | Security review | adversarial read of auth, actions, routes, payments, RLS | 1 high, 7 medium, 7 low findings — all fixed (see docs/SECURITY.md review log) |
 
 ## Christmas (seasonal)
@@ -31,6 +31,18 @@ Functional development build. In demo mode (no credentials) the complete journey
 - Christmas Bottle product (1 Oct – 18 Dec, UK dates) with a required fragrance choice (winter spice, fireside pine, unscented) carried to Stripe, the order, admin and email; Christmas-styled printed card with holly.
 - Seasonal landing and pricing section, hidden out of season (pages revalidate hourly).
 - Verified: 11 new unit tests (carol bar timing, personalised words, carol scene, seasonality incl. the London-date boundary, fragrance validation); Christmas wizard-to-gift journey in Playwright on mobile and desktop.
+
+## Memory in a Bottle
+- Wizard step "Photos & song" (optional): up to 12 photos with caption and year, a song link from Spotify / Apple Music / YouTube / SoundCloud / Deezer / TIDAL, and for remembrance gifts "In loving memory of" name and years. Photos are shrunk in the browser and uploaded right after the gift is created; failures are reported on the generating screen.
+- Photos re-encoded server-side (sharp: rotate, ≤1600 px, JPEG, metadata stripped) and stored via a `MediaStore` (memory / `.data/media` / private Supabase bucket). Recipient route by token only for live gifts; owner/admin route for preview, editor and print. Deleted with the photo, the gift and the retention sweep.
+- Recipient player: "Moments worth keeping" polaroid timeline (sorted by year), "Our song" card that mounts the official embed only after a tap and pauses the procedural music, "In loving memory of…" on the opening and keepsake.
+- Gift page editor "Photos, song and dedication" (add/remove immediately; captions, years and order saved together; song and dedication saved without regeneration).
+- Memory Bottle product (£24.99 + £3.95): refuses checkout without a photo; print page adds a sheet of three mini prints and the in-memory line.
+- Landing section "Memory in a Bottle" (drawn scene art in the polaroids, no customer photos).
+- Fixed along the way: the local writer produced a single scene for very short messages, so generation retried and failed; it now splits at natural pauses or adds a quiet framing scene (words unchanged). It also signed off as "(your husband)" when the recipient was the sender's husband; that inverted sign-off is gone.
+- Verified: 12 new unit tests (song allowlist, EXIF/GPS stripped, bad types refused, 12-photo cap, edit/reorder, public projection has no gift id or storage keys, token route 404 until live, deletion removes files, Memory Bottle needs a photo, remembrance saved without regeneration, short-message stories, sign-off); Playwright memory journey (upload in the wizard → gift page editor → Memory Bottle demo checkout → mini prints → recipient timeline and tap-to-load song) and remembrance journey on mobile and desktop; `pnpm test:supabase` with both migrations applied twice and photos round-tripped through Postgres.
+- **Unverified:** Supabase Storage upload/download/remove against a real project (the local PostgREST harness has no Storage); real Spotify/Apple/YouTube embeds (blocked in the build sandbox, the embed URLs follow each service's documented format).
+- **Action for the deployed project:** run `supabase/migrations/0002_photos.sql` in the SQL editor before deploying this release.
 
 ## Deployment readiness (Vercel + Supabase)
 - Deploy guide: docs/DEPLOYMENT.md. **Not deployed yet**: the build environment cannot reach vercel.com or supabase.com.

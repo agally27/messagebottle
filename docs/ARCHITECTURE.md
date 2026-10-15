@@ -42,6 +42,7 @@ UserProfile ──1:n── Gift ──1:n── GenerationJob
                       │  ├── story: Story { title, opening, scenes[], closing, dedication, provenance }
                       │  │      Scene { id, order, heading, text, artPrompt, art: procedural spec | stored image }
                       │  ├── audio: AudioAsset[] (music: procedural mood | stored url; narration: stored url)
+                      │  ├── photos: GiftPhoto[] (storageKey, size, caption, year, order) → MediaStore files
                       │  └── publicToken, status: draft → generating → ready → active ⇄ revoked | failed
                       └──1:n── Order ──1:n── OrderItem, Fulfilment, PaymentEvent (idempotent by provider event id)
 AuditEvent (ids and statuses only, never message text) · EmailDelivery · rate-limit counters
@@ -59,7 +60,7 @@ The generation screen polls `/api/gifts/[id]/job`; the poll also re-kicks stale 
 
 ## Recipient experience
 
-`GiftPlayer` (client) renders stages: closed → opening → message → scenes → closing → keepsake. Audio starts only after the "Open the bottle" tap. Music is synthesised in the browser from the mood (or played from a stored URL when a music provider exists). Narration uses a stored asset when present, otherwise the device's speech synthesis; text is always visible. Reduced-motion preferences shorten or remove animation.
+`GiftPlayer` (client) renders stages: closed → opening → message → scenes → photos (if any) → song (if linked) → closing → keepsake. Photos come from the token route for recipients and the owner route in the sender's preview; a song's official embed is mounted only after a tap, and pauses the procedural music. Audio starts only after the "Open the bottle" tap. Music is synthesised in the browser from the mood (or played from a stored URL when a music provider exists). Narration uses a stored asset when present, otherwise the device's speech synthesis; text is always visible. Reduced-motion preferences shorten or remove animation.
 
 ## Persistence backends
 
@@ -68,3 +69,5 @@ The generation screen polls `/api/gifts/[id]/job`; the poll also re-kicks stale 
 | `memory` | tests, e2e | nothing persists |
 | `local` | development, demos | single JSON file in `.data/`, atomic writes, single process |
 | `supabase` | production | Postgres with RLS, Auth, Storage; see `supabase/migrations` and docs/DEPLOYMENT.md |
+
+Media files (gift photos) use a matching `MediaStore` (`src/lib/media/`): memory for tests, `.data/media` locally, the private Supabase Storage bucket in production.

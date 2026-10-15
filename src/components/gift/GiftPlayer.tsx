@@ -11,7 +11,9 @@ import { StoryText } from "./StoryText";
 import { BottleMark } from "@/components/ui/Logo";
 import { GlowingBottle } from "@/components/art/GlowingBottle";
 
-type Stage = "closed" | "opening" | "message" | "scene" | "closing" | "keepsake";
+type Stage = "closed" | "opening" | "message" | "scene" | "photos" | "song" | "closing" | "keepsake";
+type Phase = "closed" | "opening" | "story" | "keepsake";
+type Step = { kind: "message" } | { kind: "scene"; index: number } | { kind: "photos" } | { kind: "song" } | { kind: "closing" };
 
 interface Props {
   gift: PublicGift;
@@ -40,16 +42,33 @@ function useReducedMotion() {
 
 /**
  * The recipient experience. Stages: closed bottle → opening animation →
- * personal opening message → scenes → closing → keepsake. Audio starts only
- * after the recipient taps "Open", respecting autoplay policies.
+ * personal opening message → scenes → photos → their song → closing →
+ * keepsake. Audio starts only after the recipient taps "Open", respecting
+ * autoplay policies. A linked song loads the music service's player only
+ * after the recipient taps to play it.
  */
 export function GiftPlayer({ gift, preview, startOpen, embedded, banner, className }: Props) {
   const theme = getTheme(gift.theme);
   const dark = theme.mode === "dark";
   const reduced = useReducedMotion();
   const scenes = useMemo(() => [...gift.story.scenes].sort((a, b) => a.order - b.order), [gift.story.scenes]);
-  const [stage, setStage] = useState<Stage>(startOpen ? "message" : "closed");
-  const [sceneIndex, setSceneIndex] = useState(0);
+  const photos = useMemo(() => byYear(gift.photos), [gift.photos]);
+  const steps = useMemo<Step[]>(
+    () => [
+      { kind: "message" },
+      ...scenes.map((_, index) => ({ kind: "scene" as const, index })),
+      ...(photos.length ? [{ kind: "photos" as const }] : []),
+      ...(gift.song ? [{ kind: "song" as const }] : []),
+      { kind: "closing" },
+    ],
+    [scenes, photos.length, gift.song],
+  );
+  const [phase, setPhase] = useState<Phase>(startOpen ? "story" : "closed");
+  const [stepIndex, setStepIndex] = useState(0);
+  const [songOpen, setSongOpen] = useState(false);
+  const step: Step = steps[Math.min(stepIndex, steps.length - 1)] ?? { kind: "message" };
+  const stage: Stage = phase === "story" ? step.kind : phase;
+  const sceneIndex = step.kind === "scene" ? step.index : 0;
   const [musicOn, setMusicOn] = useState(false);
   const [muted, setMuted] = useState(false);
   const [narrating, setNarrating] = useState(false);
@@ -82,12 +101,12 @@ export function GiftPlayer({ gift, preview, startOpen, embedded, banner, classNa
   }, [music]);
 
   const open = async () => {
-    setStage("opening");
+    setPhase("opening");
     if (!preview && gift.token !== "example") {
       void fetch(`/api/g/${gift.token}/open`, { method: "POST", keepalive: true }).catch(() => undefined);
     }
     if (hasMusic && !muted) await startMusic();
-    window.setTimeout(() => setStage("message"), reduced ? 300 : 2400);
+    window.setTimeout(() => setPhase("story"), reduced ? 300 : 2400);
   };
 
   const toggleMute = () => {
@@ -116,6 +135,7 @@ export function GiftPlayer({ gift, preview, startOpen, embedded, banner, classNa
   const currentText = (): string => {
     if (stage === "message") return `${gift.story.title}. ${gift.story.opening}`;
     if (stage === "scene") return `${scenes[sceneIndex]?.heading ?? ""}. ${scenes[sceneIndex]?.text ?? ""}`;
+    if (stage === "photos") return photos.map((p) => [p.year, p.caption].filter(Boolean).join(", ")).filter(Boolean).join(". ");
     if (stage === "closing") return gift.story.closing;
     return "";
   };
@@ -144,35 +164,36 @@ export function GiftPlayer({ gift, preview, startOpen, embedded, banner, classNa
 
   const goNext = () => {
     stopNarration();
-    if (stage === "message") {
-      setSceneIndex(0);
-      setStage(scenes.length ? "scene" : "closing");
-    } else if (stage === "scene") {
-      if (sceneIndex < scenes.length - 1) setSceneIndex((i) => i + 1);
-      else setStage("closing");
-    } else if (stage === "closing") {
-      setStage("keepsake");
-    }
+    if (phase !== "story") return;
+    if (stepIndex < steps.length - 1) setStepIndex((i) => i + 1);
+    else setPhase("keepsake");
     liveRef.current?.focus();
   };
 
   const goBack = () => {
     stopNarration();
-    if (stage === "scene") {
-      if (sceneIndex > 0) setSceneIndex((i) => i - 1);
-      else setStage("message");
-    } else if (stage === "closing") {
-      setSceneIndex(scenes.length - 1);
-      setStage(scenes.length ? "scene" : "message");
-    } else if (stage === "keepsake") {
-      setStage("closing");
+    if (phase === "keepsake") {
+      setStepIndex(steps.length - 1);
+      setPhase("story");
+    } else if (phase === "story" && stepIndex > 0) {
+      setStepIndex((i) => i - 1);
     }
   };
 
   const replay = () => {
     stopNarration();
-    setSceneIndex(0);
-    setStage("message");
+    setStepIndex(0);
+    setPhase("story");
+  };
+
+  /** The recipient chose to hear the real song: quieten our own music first. */
+  const playSong = () => {
+    stopNarration();
+    if (musicRef.current && musicOn) {
+      musicRef.current.pause();
+      setMusicOn(false);
+    }
+    setSongOpen(true);
   };
 
   useEffect(() => {
@@ -185,10 +206,11 @@ export function GiftPlayer({ gift, preview, startOpen, embedded, banner, classNa
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stage, sceneIndex]);
+  }, [phase, stepIndex]);
 
-  const total = scenes.length + 2; // message + scenes + closing
-  const position = stage === "message" ? 0 : stage === "scene" ? sceneIndex + 1 : stage === "closing" ? total - 1 : total;
+  const total = steps.length;
+  const position = phase === "story" ? stepIndex : phase === "keepsake" ? total : 0;
+  const inMemory = gift.inMemoryOf ? [gift.inMemoryOf.name, gift.inMemoryOf.dates].filter(Boolean).join(", ") : "";
   const scene: PublicScene | undefined = stage === "scene" ? scenes[sceneIndex] : undefined;
   const heroSpec = scenes[0]?.art.kind === "procedural" ? scenes[0].art.spec : { theme: gift.theme, motif: "bottle" as const, timeOfDay: "night" as const, seed: 1 };
 
@@ -261,9 +283,10 @@ export function GiftPlayer({ gift, preview, startOpen, embedded, banner, classNa
               <GlowingBottle festive={gift.occasion === "christmas"} className={cn("relative mx-auto h-36 w-auto", !reduced && "animate-float")} animated={!reduced} />
             </div>
             <p className={cn("mt-6 text-xs font-semibold uppercase tracking-[0.2em]", mutedColor)}>For {gift.recipientName}</p>
+            {inMemory ? <p className={cn("mt-2 font-display text-base italic", mutedColor)}>In loving memory of {inMemory}</p> : null}
             <h1 className={cn("mt-3 font-display text-4xl leading-tight sm:text-5xl", textColor)}>Someone has a message for you.</h1>
             <p className={cn("mt-4", mutedColor)}>
-              A story in {scenes.length} scenes{hasMusic ? ", with music" : ""}. From {gift.senderName}. About {Math.max(2, Math.ceil(total * 0.6))} minutes.
+              A story in {scenes.length} scenes{photos.length ? `, ${photos.length} ${photos.length === 1 ? "photo" : "photos"}` : ""}{hasMusic || gift.song ? ", with music" : ""}. From {gift.senderName}. About {Math.max(2, Math.ceil(total * 0.6))} minutes.
             </p>
             <button type="button" onClick={() => void open()} className={cn("mt-8 inline-flex h-14 items-center justify-center rounded-full px-8 text-base font-semibold shadow-lift transition-transform active:scale-[0.98]", dark ? "bg-paper text-ink" : "bg-ink text-text-on-dark")} style={dark ? { backgroundColor: theme.palette.paper, color: theme.palette.bg } : undefined}>
               Open the bottle
@@ -304,6 +327,65 @@ export function GiftPlayer({ gift, preview, startOpen, embedded, banner, classNa
           </Card>
         ) : null}
 
+        {stage === "photos" ? (
+          <Card dark={dark} theme={theme} key="photos" wide>
+            <p className="eyebrow" style={{ color: theme.palette.accent2 }}>
+              {inMemory ? "Remembering" : photos.some((p) => p.year) ? "Then and now" : "Moments kept"}
+            </p>
+            <h2 className="mt-2 font-display text-2xl leading-tight sm:text-3xl">{photos.length === 1 ? "A moment worth keeping" : "Moments worth keeping"}</h2>
+            <ol className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5" aria-label="Photos">
+              {photos.map((p, i) => (
+                <li key={p.id} className={cn("rounded-sm bg-white p-2 pb-3 text-ink shadow-soft ring-1 ring-black/5", !reduced && "transition-transform hover:rotate-0", (i % 3 === 0 ? "-rotate-2" : i % 3 === 1 ? "rotate-1" : "-rotate-1"))}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={p.url} alt={p.caption || `Photo ${i + 1}${p.year ? `, ${p.year}` : ""}`} width={p.width} height={p.height} loading="lazy" decoding="async" className="aspect-square w-full bg-sand-deep object-cover" />
+                  {p.caption || p.year ? (
+                    <p className="mt-2 px-1 font-hand text-lg leading-tight text-ink">
+                      {p.year ? <span className="mr-1.5 font-sans text-xs font-semibold tracking-wide text-text-muted">{p.year}</span> : null}
+                      {p.caption}
+                    </p>
+                  ) : null}
+                </li>
+              ))}
+            </ol>
+          </Card>
+        ) : null}
+
+        {stage === "song" && gift.song ? (
+          <Card dark={dark} theme={theme} key="song">
+            <p className="eyebrow" style={{ color: theme.palette.accent2 }}>
+              {inMemory ? "Their song" : "Our song"}
+            </p>
+            <h2 className="mt-2 font-display text-2xl leading-tight sm:text-3xl">{gift.senderName} chose a song for you</h2>
+            {songOpen && gift.song.embedUrl ? (
+              <iframe
+                src={gift.song.embedUrl}
+                title={`Song on ${gift.song.providerName}`}
+                className={cn("mt-6 w-full rounded-xl border-0", gift.song.provider === "youtube" && "aspect-video")}
+                style={gift.song.provider === "youtube" ? undefined : { height: embedHeight(gift.song) }}
+                allow="autoplay; encrypted-media; clipboard-write; fullscreen; picture-in-picture"
+                sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-presentation"
+                referrerPolicy="strict-origin-when-cross-origin"
+                loading="lazy"
+              />
+            ) : (
+              <div className="mt-6 flex flex-col items-start gap-3">
+                {gift.song.embedUrl ? (
+                  <button type="button" onClick={playSong} className={cn("inline-flex h-12 items-center gap-2 rounded-full px-6 text-sm font-semibold shadow-soft transition-transform active:scale-[0.98]", dark ? "bg-paper text-ink" : "bg-ink text-text-on-dark")} style={dark ? { backgroundColor: theme.palette.paper, color: theme.palette.bg } : undefined}>
+                    <PlayIcon /> Play it here
+                  </button>
+                ) : null}
+                <p className={cn("text-xs", mutedColor)}>
+                  {gift.song.embedUrl ? `Plays through ${gift.song.providerName}'s own player, which loads only when you tap play.` : `This song lives on ${gift.song.providerName}.`}
+                </p>
+              </div>
+            )}
+            <a href={gift.song.url} target="_blank" rel="noopener noreferrer" className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold underline underline-offset-4">
+              Open in {gift.song.providerName}
+              <span className="sr-only"> (opens in a new tab)</span>
+            </a>
+          </Card>
+        ) : null}
+
         {stage === "closing" ? (
           <Card dark={dark} theme={theme} key="closing">
             <p className="eyebrow" style={{ color: theme.palette.accent2 }}>
@@ -317,6 +399,7 @@ export function GiftPlayer({ gift, preview, startOpen, embedded, banner, classNa
           <div className="max-w-md text-center animate-fade-up" key="keepsake">
             <GlowingBottle festive={gift.occasion === "christmas"} className="mx-auto h-32 w-auto" animated={!reduced} />
             <p className={cn("mt-6 font-display text-2xl leading-snug sm:text-3xl", textColor)}>{gift.story.dedication || `For ${gift.recipientName}. From ${gift.senderName}.`}</p>
+            {inMemory && !gift.story.dedication?.includes(gift.inMemoryOf?.name ?? "") ? <p className={cn("mt-3 font-display italic", mutedColor)}>In loving memory of {inMemory}</p> : null}
             <p className={cn("mt-4 text-sm", mutedColor)}>This message is yours to keep. Come back to it whenever you like.</p>
             <div className="mt-8 flex flex-wrap justify-center gap-3">
               <button type="button" onClick={replay} className={cn("inline-flex h-12 items-center rounded-full border px-6 text-sm font-semibold", dark ? "border-white/30 text-text-on-dark hover:bg-white/10" : "border-ink/30 text-ink hover:bg-ink/5")}>
@@ -329,7 +412,7 @@ export function GiftPlayer({ gift, preview, startOpen, embedded, banner, classNa
       </div>
 
       {/* Bottom nav */}
-      {stage === "message" || stage === "scene" || stage === "closing" ? (
+      {phase === "story" ? (
         <div className="relative z-10 px-4 pb-5 sm:px-6">
           <div className="mx-auto flex max-w-2xl items-center justify-between gap-3">
             <button type="button" onClick={goBack} disabled={stage === "message"} aria-label="Previous" className={cn("flex h-12 w-12 items-center justify-center rounded-full border transition-colors disabled:opacity-30", dark ? "border-white/30 text-text-on-dark hover:bg-white/10" : "border-ink/25 text-ink hover:bg-ink/5")}>
@@ -360,9 +443,24 @@ export function GiftPlayer({ gift, preview, startOpen, embedded, banner, classNa
   );
 }
 
-function Card({ children, dark, theme }: { children: React.ReactNode; dark: boolean; theme: ReturnType<typeof getTheme> }) {
+/** Photos with a year read as a timeline; undated ones keep the sender's order at the end. */
+function byYear(photos: PublicGift["photos"]): PublicGift["photos"] {
+  if (!photos.some((p) => p.year)) return photos;
+  return photos
+    .map((p, i) => ({ p, i }))
+    .sort((a, b) => (a.p.year ?? Infinity) - (b.p.year ?? Infinity) || a.i - b.i)
+    .map(({ p }) => p);
+}
+
+function embedHeight(song: NonNullable<PublicGift["song"]>): number {
+  if (song.provider === "spotify") return /\/(track|episode)\//.test(song.embedUrl ?? "") ? 152 : 352;
+  if (song.provider === "apple") return /[?&]i=|\/song\//.test(song.url) ? 175 : 450;
+  return 166;
+}
+
+function Card({ children, dark, theme, wide }: { children: React.ReactNode; dark: boolean; theme: ReturnType<typeof getTheme>; wide?: boolean }) {
   return (
-    <article className={cn("w-full max-w-2xl rounded-2xl p-6 shadow-lift backdrop-blur-md animate-fade-up sm:p-9", dark ? "bg-black/35 ring-1 ring-white/15" : "ring-1 ring-black/10")} style={{ backgroundColor: dark ? "rgba(10,14,28,0.5)" : `${theme.palette.paper}e6`, color: dark ? theme.palette.paper : theme.palette.ink }}>
+    <article className={cn("w-full rounded-2xl", wide ? "max-w-3xl" : "max-w-2xl", "p-6 shadow-lift backdrop-blur-md animate-fade-up sm:p-9", dark ? "bg-black/35 ring-1 ring-white/15" : "ring-1 ring-black/10")} style={{ backgroundColor: dark ? "rgba(10,14,28,0.5)" : `${theme.palette.paper}e6`, color: dark ? theme.palette.paper : theme.palette.ink }}>
       {children}
     </article>
   );

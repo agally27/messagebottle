@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { AppShell } from "@/components/site/AppShell";
 import { GenerationProgress } from "@/components/gift/GenerationProgress";
 import { GlowingBottle } from "@/components/art/GlowingBottle";
+import { Notice } from "@/components/ui/Notice";
 import { requireUserOrRedirect } from "@/lib/auth/guards";
 import { getStore } from "@/lib/data";
 import { getGenerationStatus } from "@/lib/gifts/service";
@@ -11,8 +12,10 @@ import { notFound } from "next/navigation";
 export const metadata: Metadata = { title: "Creating your gift", robots: { index: false } };
 export const dynamic = "force-dynamic";
 
-export default async function GeneratingPage({ params }: PageProps<"/gifts/[id]/generating">) {
+export default async function GeneratingPage({ params, searchParams }: PageProps<"/gifts/[id]/generating">) {
   const { id } = await params;
+  const failedParam = (await searchParams).photosFailed;
+  const photosFailed = Math.min(12, Number.parseInt(typeof failedParam === "string" ? failedParam : "0", 10) || 0);
   const user = await requireUserOrRedirect(`/gifts/${id}/generating`);
   const gift = await getStore().gifts.get(id);
   if (!gift || gift.ownerId !== user.id) notFound();
@@ -29,6 +32,11 @@ export default async function GeneratingPage({ params }: PageProps<"/gifts/[id]/
         <h1 className="mt-2 text-3xl sm:text-4xl">Making your gift</h1>
         <p className="mt-3 text-text-muted">This usually takes under a minute. You can leave this page; the gift will be waiting in My gifts.</p>
       </div>
+      {photosFailed > 0 ? (
+        <Notice tone="warning" className="mt-8">
+          {photosFailed === 1 ? "One photo" : `${photosFailed} photos`} couldn&apos;t be uploaded. Your gift is being made without {photosFailed === 1 ? "it" : "them"}; you can add photos again from the gift page once it&apos;s ready.
+        </Notice>
+      ) : null}
       <div className="mt-10">
         <GenerationProgress giftId={gift.id} initial={status} />
       </div>

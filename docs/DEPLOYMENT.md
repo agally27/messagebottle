@@ -6,7 +6,7 @@ Nothing has been deployed by the build sessions: their network blocks vercel.com
 
 ## 1. Supabase (about 10 minutes)
 1. Create a project at supabase.com (region: London `eu-west-2` for UK customers).
-2. **SQL Editor → New query**: paste all of `supabase/migrations/0001_init.sql` and run it. It is safe to run again.
+2. **SQL Editor → New query**: paste all of `supabase/migrations/0001_init.sql` and run it, then do the same with `0002_photos.sql` (adds the gift photos column). Both are safe to run again. **Existing projects:** run `0002_photos.sql` before deploying the Memory in a Bottle release, or saving gifts will fail. Photos are stored in the private `gift-assets` bucket that 0001 creates.
 3. **Authentication → URL Configuration**: set **Site URL** to your Vercel URL (e.g. `https://messagebottle.vercel.app`) and add `https://messagebottle.vercel.app/auth/callback` (and `https://*-<your-team>.vercel.app/auth/callback` for previews) to **Redirect URLs**.
 4. **Authentication → Providers → Email**: enabled (magic links). Supabase's built-in email sender is heavily rate-limited (a few emails an hour) — fine for testing; add custom SMTP (e.g. Resend) under **Authentication → Emails → SMTP Settings** before real customers.
 5. **Project Settings → API**: note the project URL, the publishable (anon) key and the secret (service role) key.

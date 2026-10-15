@@ -126,10 +126,11 @@ export const OCCASIONS: readonly Occasion[] = [
   },
   {
     id: "memories",
-    label: "Special memories",
+    label: "Memories",
     short: "Memories",
-    description: "A day, a trip, a chapter you both want to keep.",
+    description: "How you met, a chapter you shared, the photos and the song that were yours.",
     prompts: [
+      "The day we first met, and what I thought of you…",
       "Where we were and what it felt like…",
       "The detail I never want to forget…",
       "Why that moment still matters…",

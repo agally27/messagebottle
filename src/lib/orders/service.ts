@@ -31,6 +31,10 @@ export async function createPendingOrder(user: UserProfile, gift: Gift, input: {
   }
   const priced = priceOrder(input.productId, 1);
   if (!priced) throw new OrderError("That product isn't available.", 404);
+  const minPhotos = priced.product.minPhotos ?? 0;
+  if (minPhotos > 0 && (gift.photos?.length ?? 0) < minPhotos) {
+    throw new OrderError(`The ${priced.product.name} prints photos from your gift. Add at least ${minPhotos === 1 ? "one photo" : `${minPhotos} photos`} first.`);
+  }
   const options: Record<string, string> = {};
   if (priced.product.scentOptions?.length) {
     const scent = typeof input.options?.scent === "string" ? input.options.scent : "";

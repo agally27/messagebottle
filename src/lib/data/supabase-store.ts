@@ -51,6 +51,7 @@ export class SupabaseStore implements DataStore {
       input: row.input as Gift["input"],
       story: (row.story as Gift["story"]) ?? null,
       audio: (row.audio as Gift["audio"]) ?? [],
+      photos: (row.photos as Gift["photos"]) ?? [],
       publicToken: row.public_token as string,
       productId: (row.product_id as string | null) ?? null,
       openCount: (row.open_count as number) ?? 0,
@@ -72,6 +73,7 @@ export class SupabaseStore implements DataStore {
     if (g.input !== undefined) r.input = g.input;
     if (g.story !== undefined) r.story = g.story;
     if (g.audio !== undefined) r.audio = g.audio;
+    if (g.photos !== undefined) r.photos = g.photos;
     if (g.publicToken !== undefined) r.public_token = g.publicToken;
     if (g.productId !== undefined) r.product_id = g.productId;
     if (g.openCount !== undefined) r.open_count = g.openCount;

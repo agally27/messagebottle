@@ -15,6 +15,8 @@ import { clearDraft, DEFAULT_INPUT, loadDraft, saveDraft } from "./draft";
 import { OccasionStep } from "./steps/OccasionStep";
 import { RecipientStep } from "./steps/RecipientStep";
 import { MessageStep } from "./steps/MessageStep";
+import { MemoriesStep, type PendingPhoto } from "./steps/MemoriesStep";
+import { uploadPhoto } from "@/lib/media/resize";
 import { StyleStep } from "./steps/StyleStep";
 import { SoundStep } from "./steps/SoundStep";
 import { ReviewStep } from "./steps/ReviewStep";
@@ -23,6 +25,7 @@ export const WIZARD_STEPS = [
   { id: "occasion", label: "Occasion" },
   { id: "recipient", label: "Who it's for" },
   { id: "message", label: "Your message" },
+  { id: "memories", label: "Photos & song" },
   { id: "style", label: "Look" },
   { id: "sound", label: "Sound" },
   { id: "review", label: "Review" },
@@ -68,6 +71,14 @@ export function CreateWizard({ demoMode, signedIn, requiresSignIn }: { demoMode:
   const [resumed, setResumed] = useState(initial.resumed);
   const [pending, startTransition] = useTransition();
   const topRef = useRef<HTMLDivElement>(null);
+  const [photos, setPhotos] = useState<PendingPhoto[]>([]);
+  const [uploadStatus, setUploadStatus] = useState<string | null>(null);
+  const photosRef = useRef<PendingPhoto[]>([]);
+  useEffect(() => {
+    photosRef.current = photos;
+  }, [photos]);
+  // Free preview URLs when the wizard goes away.
+  useEffect(() => () => photosRef.current.forEach((p) => URL.revokeObjectURL(p.src)), []);
 
   // Persist the draft (debounced) whenever it changes.
   useEffect(() => {
@@ -153,13 +164,20 @@ export function CreateWizard({ demoMode, signedIn, requiresSignIn }: { demoMode:
     }
     startTransition(async () => {
       const result = await createGiftAction(input, { productId: initial.productId });
-      // On success the action redirects and never returns here.
-      if (result && !result.ok) {
+      if (!result.ok) {
         setFormError(result.error);
         if (result.fieldErrors) setErrors(result.fieldErrors);
-      } else {
-        clearDraft();
+        return;
       }
+      const giftId = result.data.giftId;
+      let failed = 0;
+      for (const [i, p] of photos.entries()) {
+        setUploadStatus(`Adding photo ${i + 1} of ${photos.length}…`);
+        const r = await uploadPhoto(giftId, p.file, { caption: p.caption, year: p.year });
+        if (!r.ok) failed += 1;
+      }
+      clearDraft();
+      router.push(`/gifts/${giftId}/generating${failed ? `?photosFailed=${failed}` : ""}`);
     });
   };
 
@@ -197,9 +215,10 @@ export function CreateWizard({ demoMode, signedIn, requiresSignIn }: { demoMode:
         {stepId === "occasion" ? <OccasionStep {...stepProps} /> : null}
         {stepId === "recipient" ? <RecipientStep {...stepProps} /> : null}
         {stepId === "message" ? <MessageStep {...stepProps} /> : null}
+        {stepId === "memories" ? <MemoriesStep {...stepProps} photos={photos} setPhotos={setPhotos} /> : null}
         {stepId === "style" ? <StyleStep {...stepProps} /> : null}
         {stepId === "sound" ? <SoundStep {...stepProps} /> : null}
-        {stepId === "review" ? <ReviewStep {...stepProps} goTo={goTo} demoMode={demoMode} signedIn={signedIn} productId={initial.productId} /> : null}
+        {stepId === "review" ? <ReviewStep {...stepProps} goTo={goTo} demoMode={demoMode} signedIn={signedIn} productId={initial.productId} photoCount={photos.length} /> : null}
       </section>
 
       {formError ? (
@@ -215,7 +234,7 @@ export function CreateWizard({ demoMode, signedIn, requiresSignIn }: { demoMode:
           </Button>
           {stepId === "review" ? (
             <Button type="button" size="lg" onClick={submit} disabled={pending}>
-              {pending ? "Starting…" : requiresSignIn ? "Sign in to create my gift" : "Create my gift"}
+              {pending ? (uploadStatus ?? "Starting…") : requiresSignIn ? "Sign in to create my gift" : "Create my gift"}
             </Button>
           ) : (
             <Button type="button" size="lg" onClick={next}>

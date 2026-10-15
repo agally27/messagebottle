@@ -12,6 +12,7 @@ import { writeLocalStory } from "@/lib/story/local-writer";
 import { checkStory } from "@/lib/story/quality";
 import { altFor, assignScenes, withCarolScene } from "@/lib/story/scenes";
 import { newId, nowIso } from "@/lib/utils/ids";
+import { deleteGiftMedia } from "@/lib/gifts/photos";
 
 export const STEP_LABELS: Record<JobStep, string> = {
   brief: "Preparing the personal story",
@@ -263,6 +264,7 @@ export async function sweepAbandonedGifts(days = 90, limit = 100): Promise<strin
   const abandoned = await store.gifts.listAbandoned(before, limit);
   const removed: string[] = [];
   for (const gift of abandoned) {
+    await deleteGiftMedia(gift);
     if (await store.gifts.delete(gift.id)) {
       removed.push(gift.id);
       await store.audit.append({ id: newId(), at: nowIso(), actorId: null, action: "gift.retention_deleted", subjectType: "gift", subjectId: gift.id, meta: { status: gift.status } });

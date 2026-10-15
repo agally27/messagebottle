@@ -1,0 +1,200 @@
+@import "tailwindcss";
+
+/* ──────────────────────────────────────────────────────────────────────────
+   Message in a Bottle — design tokens
+   Warm paper, deep ocean, sea glass, a little gold. Soft shadows, no gradients
+   as decoration, restrained motion.
+   ────────────────────────────────────────────────────────────────────────── */
+@theme {
+  /* Paper & sand */
+  --color-cream: #fbf8f1;
+  --color-paper: #fffdf8;
+  --color-sand: #efe6d6;
+  --color-sand-deep: #e2d5bd;
+
+  /* Ocean */
+  --color-ink: #14213d;
+  --color-navy: #1f2e4f;
+  --color-ocean: #2c5f8a;
+  --color-ocean-deep: #1c4466;
+  --color-teal: #3e7f86;
+  --color-seaglass: #a8c8c2;
+  --color-seaglass-pale: #dcebe7;
+  --color-mist: #eef3f4;
+
+  /* Accents */
+  --color-gold: #c9a961;
+  --color-gold-pale: #efe3c3;
+  --color-coral: #d98b74;
+  --color-coral-pale: #f6dfd6;
+
+  /* Text */
+  --color-text: #1c2333;
+  --color-text-muted: #5b6578;
+  --color-text-faint: #8b94a5;
+  --color-text-on-dark: #f4efe4;
+  --color-text-on-dark-muted: #b9c2cf;
+
+  /* Feedback */
+  --color-success: #2f8a66;
+  --color-success-pale: #dff1e8;
+  --color-warning: #a8742a;
+  --color-warning-pale: #f8ecd4;
+  --color-danger: #b3443d;
+  --color-danger-pale: #f8e1df;
+
+  /* Lines */
+  --color-line: rgb(20 33 61 / 0.1);
+  --color-line-strong: rgb(20 33 61 / 0.18);
+
+  /* Type */
+  --font-display: var(--font-fraunces), "Iowan Old Style", Georgia, serif;
+  --font-sans: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+
+  /* Radii */
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 22px;
+  --radius-xl: 28px;
+  --radius-2xl: 36px;
+
+  /* Shadows */
+  --shadow-soft: 0 1px 2px rgb(20 33 61 / 0.04), 0 8px 24px -12px rgb(20 33 61 / 0.18);
+  --shadow-card: 0 1px 1px rgb(20 33 61 / 0.04), 0 12px 32px -16px rgb(20 33 61 / 0.22);
+  --shadow-lift: 0 2px 4px rgb(20 33 61 / 0.06), 0 24px 48px -20px rgb(20 33 61 / 0.3);
+  --shadow-glow: 0 0 0 1px rgb(201 169 97 / 0.35), 0 10px 40px -10px rgb(201 169 97 / 0.45);
+
+  /* Motion */
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out-soft: cubic-bezier(0.65, 0, 0.35, 1);
+
+  --animate-fade-up: fade-up 700ms var(--ease-out-soft) both;
+  --animate-fade-in: fade-in 600ms var(--ease-out-soft) both;
+  --animate-float: float 7s ease-in-out infinite;
+  --animate-shimmer: shimmer 2.4s linear infinite;
+  --animate-drift: drift 18s ease-in-out infinite alternate;
+  --animate-pulse-soft: pulse-soft 2.8s ease-in-out infinite;
+
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0) rotate(-2deg); }
+    50% { transform: translateY(-10px) rotate(2deg); }
+  }
+  @keyframes shimmer {
+    from { background-position: -200% 0; }
+    to { background-position: 200% 0; }
+  }
+  @keyframes drift {
+    from { transform: translateX(-2%) translateY(0); }
+    to { transform: translateX(2%) translateY(-1.5%); }
+  }
+  @keyframes pulse-soft {
+    0%, 100% { opacity: 0.55; }
+    50% { opacity: 1; }
+  }
+}
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply bg-cream text-text font-sans antialiased;
+    font-feature-settings: "ss01", "cv11";
+    text-rendering: optimizeLegibility;
+  }
+  ::selection {
+    background: rgb(201 169 97 / 0.35);
+  }
+  h1, h2, h3, h4 {
+    @apply font-display text-ink;
+    text-wrap: balance;
+    letter-spacing: -0.01em;
+  }
+  p {
+    text-wrap: pretty;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-ocean);
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+  button, [role="button"] {
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@utility container-page {
+  width: 100%;
+  max-width: 72rem;
+  margin-inline: auto;
+  padding-inline: 1.25rem;
+  @media (min-width: 640px) { padding-inline: 2rem; }
+  @media (min-width: 1024px) { padding-inline: 2.5rem; }
+}
+
+@utility container-narrow {
+  width: 100%;
+  max-width: 44rem;
+  margin-inline: auto;
+  padding-inline: 1.25rem;
+  @media (min-width: 640px) { padding-inline: 2rem; }
+}
+
+@utility paper-texture {
+  background-color: var(--color-paper);
+  background-image:
+    radial-gradient(ellipse at 20% 10%, rgb(201 169 97 / 0.07), transparent 55%),
+    radial-gradient(ellipse at 85% 90%, rgb(62 127 134 / 0.08), transparent 55%);
+}
+
+@utility glass {
+  background: rgb(255 253 248 / 0.72);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+}
+
+@utility text-balance {
+  text-wrap: balance;
+}
+
+@utility eyebrow {
+  @apply text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-teal;
+}
+
+/* Hide scrollbars on horizontal chip rows without removing scrollability */
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+}
+
+/* Skeleton shimmer */
+@utility skeleton {
+  background: linear-gradient(90deg, rgb(20 33 61 / 0.05) 25%, rgb(20 33 61 / 0.1) 50%, rgb(20 33 61 / 0.05) 75%);
+  background-size: 200% 100%;
+  animation: var(--animate-shimmer);
+}

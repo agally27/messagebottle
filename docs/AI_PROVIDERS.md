@@ -35,3 +35,6 @@ A story call is a few thousand input tokens and ~1k output tokens. Images are th
 
 ## Testing
 Unit tests use the local providers and a `FlakyStory` test double (`src/lib/jobs/pipeline.test.ts`) to cover retries, permanent failures and fallbacks. Real providers must be verified manually with a key: create a gift, check `job.mode === "live"`, `story.provenance.provider` and the usage entries.
+
+## Carols
+The four carol tunes are traditional and in the public domain (Silent Night 1818, Jingle Bells 1857, We Wish You a Merry Christmas and Deck the Halls are traditional). Only the melodies are used, transcribed in `src/lib/domain/carols.ts` and played by the browser synthesiser; the words are our own. No recordings or modern arrangements are used. A future music or voice provider could sing the personalised words; until then the UI says plainly that nothing is sung.

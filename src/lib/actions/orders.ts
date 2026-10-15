@@ -17,7 +17,7 @@ function fail(err: unknown): ActionResult<never> {
   return { ok: false, error: "Something went wrong. Please try again." };
 }
 
-export async function startCheckoutAction(giftId: string, input: { productId: string; shippingAddress?: unknown }): Promise<ActionResult<{ orderId: string }>> {
+export async function startCheckoutAction(giftId: string, input: { productId: string; shippingAddress?: unknown; options?: { scent?: string } }): Promise<ActionResult<{ orderId: string }>> {
   let destination: string;
   try {
     const user = await requireUser();

@@ -1,8 +1,10 @@
 import type { ThemeId } from "./themes";
 import type { ToneId } from "./tones";
+import type { MusicMoodId } from "./music";
 
 export type OccasionId =
   | "love"
+  | "christmas"
   | "birthday"
   | "family"
   | "friendship"
@@ -23,6 +25,8 @@ export interface Occasion {
   prompts: string[];
   defaultTone: ToneId;
   suggestedThemes: ThemeId[];
+  /** Music chosen by default for this occasion. */
+  defaultMusic?: MusicMoodId;
   /** Extra care: remembrance gets gentler language and no celebratory options. */
   sensitive?: boolean;
 }
@@ -40,6 +44,20 @@ export const OCCASIONS: readonly Occasion[] = [
     ],
     defaultTone: "romantic",
     suggestedThemes: ["cinematic", "ocean", "watercolour"],
+  },
+  {
+    id: "christmas",
+    label: "Christmas",
+    short: "Christmas",
+    description: "A Christmas card that glows, sings and smells of the season. For family near or far.",
+    prompts: [
+      "What Christmas with you has always meant to me…",
+      "The moment from this year I'll remember most…",
+      "What I wish for you, and for all of us, next year…",
+    ],
+    defaultTone: "heartfelt",
+    suggestedThemes: ["winter", "keepsake", "cinematic"],
+    defaultMusic: "carol-silent-night",
   },
   {
     id: "birthday",

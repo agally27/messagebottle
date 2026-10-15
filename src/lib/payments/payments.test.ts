@@ -52,6 +52,18 @@ describe("orders and webhooks", () => {
     expect((await getStore().gifts.get(gift.id))?.status).toBe("ready"); // not active until paid
   });
 
+  it("requires a valid fragrance for scented products and records it on the order", async () => {
+    const { isInSeason, getProduct: gp } = await import("@/lib/config/products");
+    const product = (await import("@/lib/config/products")).PRODUCTS.find((p) => p.id === "christmas-bottle")!;
+    if (!isInSeason(product) || !gp("christmas-bottle")) return; // out of season: checkout correctly refuses it
+    const gift = await readyGift();
+    await expect(createPendingOrder(user, gift, { productId: "christmas-bottle", shippingAddress: address })).rejects.toThrow(/fragrance/);
+    await expect(createPendingOrder(user, gift, { productId: "christmas-bottle", shippingAddress: address, options: { scent: "eau-de-nonsense" } })).rejects.toThrow(/fragrance/);
+    const order = await createPendingOrder(user, gift, { productId: "christmas-bottle", shippingAddress: address, options: { scent: "fireside-pine" } });
+    expect(order.items[0]?.options).toEqual({ scent: "fireside-pine" });
+    expect(order.totalMinor).toBe(1999 + 395);
+  });
+
   it("refuses to order a gift that has no story yet", async () => {
     const gift = await createGift(user, input);
     await expect(createPendingOrder(user, gift, { productId: "digital" })).rejects.toThrow(/isn't ready/);

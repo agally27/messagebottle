@@ -10,7 +10,7 @@ import { ProviderError, storyDraftSchema } from "@/lib/providers/types";
 import { buildBrief } from "@/lib/story/brief";
 import { writeLocalStory } from "@/lib/story/local-writer";
 import { checkStory } from "@/lib/story/quality";
-import { altFor, assignScenes } from "@/lib/story/scenes";
+import { altFor, assignScenes, withCarolScene } from "@/lib/story/scenes";
 import { newId, nowIso } from "@/lib/utils/ids";
 
 export const STEP_LABELS: Record<JobStep, string> = {
@@ -119,7 +119,7 @@ const steps: Record<JobStep, StepFn> = {
       version: 1,
       title: draft.title,
       opening: draft.opening,
-      scenes: assignScenes(gift.id, draft, gift.input.theme, gift.input.occasion),
+      scenes: assignScenes(gift.id, withCarolScene(draft, gift.input.recipientName, gift.input.senderName, gift.input.music), gift.input.theme, gift.input.occasion),
       closing: draft.closing,
       dedication: draft.dedication,
       provenance: { provider, model, generatedAt: nowIso(), editedBySender: false },

@@ -26,6 +26,12 @@ Functional development build. In demo mode (no credentials) the complete journey
 | E2E | `pnpm test:e2e` | 30 pass (8 journeys + 7 axe scans, × mobile + desktop): landing, example reveal, full sender journey incl. stranger access 404 and revoke, draft persistence, invalid links, auth redirect, open-redirect refusal, demo checkout (digital + physical with address validation), print page + QR, non-admin blocked, admin fulfilment to dispatched; axe WCAG A/AA with no serious/critical violations on landing, pricing, wizard, login, support, example (closed and opened) |
 | Security review | adversarial read of auth, actions, routes, payments, RLS | 1 high, 7 medium, 7 low findings — all fixed (see docs/SECURITY.md review log) |
 
+## Christmas (seasonal)
+- Christmas occasion, Winter wonderland theme (fir trees, snow, fairy lights), festive glowing bottle in the reveal, four public-domain carols played in the browser with personalised words added to the story as "A carol for you".
+- Christmas Bottle product (1 Oct – 18 Dec, UK dates) with a required fragrance choice (winter spice, fireside pine, unscented) carried to Stripe, the order, admin and email; Christmas-styled printed card with holly.
+- Seasonal landing and pricing section, hidden out of season (pages revalidate hourly).
+- Verified: 11 new unit tests (carol bar timing, personalised words, carol scene, seasonality incl. the London-date boundary, fragrance validation); Christmas wizard-to-gift journey in Playwright on mobile and desktop.
+
 ## Deployment readiness (Vercel + Supabase)
 - Deploy guide: docs/DEPLOYMENT.md. **Not deployed yet**: the build environment cannot reach vercel.com or supabase.com.
 - Migration verified on Postgres 16: applies and re-applies cleanly; RLS blocks owners writing gifts, admin self-escalation and order inserts; server-only functions are not executable by anon/authenticated.

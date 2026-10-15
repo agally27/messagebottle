@@ -2,7 +2,9 @@
  * Music moods. The procedural (browser-generated) soundtrack interprets these
  * directly; a real music provider would receive the `prompt`.
  */
-export type MusicMoodId = "piano" | "cinematic" | "romantic" | "peaceful" | "celebratory" | "none";
+import type { CarolId } from "./carols";
+
+export type MusicMoodId = "piano" | "cinematic" | "romantic" | "peaceful" | "celebratory" | "carol-silent-night" | "carol-we-wish" | "carol-jingle-bells" | "carol-deck-the-halls" | "none";
 
 export interface MusicMood {
   id: MusicMoodId;
@@ -26,6 +28,10 @@ export interface MusicMood {
     /** Reverb wetness 0–1. */
     reverb: number;
   } | null;
+  /** A traditional carol tune (played instead of generative music). */
+  carol?: CarolId;
+  /** Only offered for these occasions. */
+  occasions?: string[];
 }
 
 export const MUSIC_MOODS: readonly MusicMood[] = [
@@ -65,6 +71,42 @@ export const MUSIC_MOODS: readonly MusicMood[] = [
     procedural: { bpm: 96, scale: [0, 2, 4, 5, 7, 9, 11], root: 65, progression: [0, 4, 5, 3], voice: "pluck", arpeggio: 0.85, reverb: 0.35 },
   },
   {
+    id: "carol-silent-night",
+    label: "Silent Night",
+    description: "The gentlest carol, on soft bells, with words written for them.",
+    prompt: "",
+    procedural: null,
+    carol: "silent-night",
+    occasions: ["christmas"],
+  },
+  {
+    id: "carol-we-wish",
+    label: "We Wish You a Merry Christmas",
+    description: "A cheerful waltz to sing around the table.",
+    prompt: "",
+    procedural: null,
+    carol: "we-wish",
+    occasions: ["christmas"],
+  },
+  {
+    id: "carol-jingle-bells",
+    label: "Jingle Bells",
+    description: "Bright plucks and sleigh bells. Best for children.",
+    prompt: "",
+    procedural: null,
+    carol: "jingle-bells",
+    occasions: ["christmas"],
+  },
+  {
+    id: "carol-deck-the-halls",
+    label: "Deck the Halls",
+    description: "Fa la la, with bells and a festive bounce.",
+    prompt: "",
+    procedural: null,
+    carol: "deck-the-halls",
+    occasions: ["christmas"],
+  },
+  {
     id: "none",
     label: "No music",
     description: "Silence, or just the words.",
@@ -79,4 +121,21 @@ export function getMusicMood(id: MusicMoodId): MusicMood {
   const found = MUSIC_MOODS.find((m) => m.id === id);
   if (!found) throw new Error(`Unknown music mood: ${id}`);
   return found;
+}
+
+export function isCarol(id: MusicMoodId): boolean {
+  return Boolean(getMusicMood(id).carol);
+}
+
+/** Moods offered for an occasion (carols only at Christmas; nothing celebratory for remembrance). */
+export function moodsForOccasion(occasion: string): MusicMood[] {
+  return MUSIC_MOODS.filter((m) => (!m.occasions || m.occasions.includes(occasion)) && !(occasion === "remembrance" && m.id === "celebratory"));
+}
+
+/** Honest label shown with the soundtrack. */
+export function musicDisclosure(id: MusicMoodId): string {
+  const m = getMusicMood(id);
+  return m.carol
+    ? `${m.label}: a traditional carol, played on your device. The words were written for you.`
+    : "Demonstration soundtrack, generated on your device from the chosen mood.";
 }

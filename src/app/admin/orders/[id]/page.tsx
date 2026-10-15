@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { FulfilmentForm } from "@/components/admin/FulfilmentForm";
 import { requireAdminOrNotFound } from "@/lib/auth/guards";
-import { formatPrice } from "@/lib/config/products";
+import { describeOptions, formatPrice } from "@/lib/config/products";
 import { getStore } from "@/lib/data";
 import { orderRef } from "@/lib/orders/service";
 
@@ -26,7 +26,7 @@ export default async function AdminOrder({ params }: PageProps<"/admin/orders/[i
         <h1 className="mt-1 text-3xl">{orderRef(order)}</h1>
         <div className="mt-2 flex gap-2"><Badge tone="neutral">{order.status}</Badge>{order.paymentProvider ? <Badge tone="gold">{order.paymentProvider}</Badge> : null}</div>
         <dl className="mt-6 space-y-2 rounded-xl border border-line bg-paper p-5 text-sm">
-          {order.items.map((i) => <div key={i.productId} className="flex justify-between"><dt>{i.name} × {i.quantity}</dt><dd>{formatPrice(i.unitPriceMinor * i.quantity)}</dd></div>)}
+          {order.items.map((i) => <div key={i.productId} className="flex justify-between"><dt>{i.name}{describeOptions(i.productId, i.options) ? ` · ${describeOptions(i.productId, i.options)}` : ""} × {i.quantity}</dt><dd>{formatPrice(i.unitPriceMinor * i.quantity)}</dd></div>)}
           <div className="flex justify-between"><dt>Delivery</dt><dd>{formatPrice(order.shippingMinor)}</dd></div>
           <div className="flex justify-between border-t border-line pt-2 font-semibold"><dt>Total</dt><dd>{formatPrice(order.totalMinor)}</dd></div>
           <div className="flex justify-between text-xs text-text-faint"><dt>Stripe session</dt><dd className="font-mono">{order.stripeCheckoutSessionId ?? "—"}</dd></div>

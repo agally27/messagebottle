@@ -43,7 +43,8 @@ export type Motif =
   | "boat"
   | "garden"
   | "mountains"
-  | "city";
+  | "city"
+  | "fir";
 
 export type TimeOfDay = "dawn" | "day" | "dusk" | "night";
 
@@ -225,6 +226,10 @@ export interface Product {
   /** Hidden products can exist in config without being offered. */
   available: boolean;
   sort: number;
+  /** Seasonal products are only sold between these month-day dates (inclusive, "MM-DD"). */
+  season?: { from: string; until: string; label: string };
+  /** Fragrance choices for scented products; one must be chosen at checkout. */
+  scentOptions?: Array<{ id: string; label: string; notes: string }>;
 }
 
 export interface ShippingAddress {
@@ -251,6 +256,8 @@ export interface OrderItem {
   name: string;
   quantity: number;
   unitPriceMinor: number;
+  /** Chosen product options, e.g. { scent: "winter-spice" }. */
+  options?: Record<string, string>;
 }
 
 export interface Fulfilment {

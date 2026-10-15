@@ -68,14 +68,62 @@ export const PRODUCTS: readonly Product[] = [
     available: true,
     sort: 3,
   },
+  {
+    id: "christmas-bottle",
+    kind: "physical",
+    name: "Christmas Bottle",
+    tagline: "Your Christmas card, rolled in a glowing bottle that smells of the season.",
+    description:
+      "Your Christmas message printed as a card and rolled inside a glowing glass bottle, sealed with red ribbon and a sprig of faux holly, on lightly scented paper. A QR card opens the illustrated story with a carol, sung to a traditional tune with words written for them.",
+    features: [
+      "Your Christmas card, printed and rolled inside",
+      "Lightly scented in your choice of festive fragrance",
+      "Glowing bottle with red ribbon, holly and QR card",
+      "The illustrated story with a personalised carol",
+    ],
+    priceMinor: 1999,
+    currency: "GBP",
+    shippingMinor: 395,
+    requiresShipping: true,
+    badge: "Christmas",
+    available: true,
+    sort: 0,
+    season: { from: "10-01", until: "12-18", label: "Christmas" },
+    scentOptions: [
+      { id: "winter-spice", label: "Winter spice", notes: "Orange, clove and cinnamon" },
+      { id: "fireside-pine", label: "Fireside pine", notes: "Pine needles and cedarwood" },
+      { id: "unscented", label: "Unscented", notes: "For anyone sensitive to fragrance" },
+    ],
+  },
 ] as const;
 
-export function getProduct(id: string): Product | null {
-  return PRODUCTS.find((p) => p.id === id && p.available) ?? null;
+/** True when a product can be sold on `now` (seasonal window inclusive, UK date). */
+export function isInSeason(p: Pick<Product, "season">, now: Date = new Date()): boolean {
+  if (!p.season) return true;
+  const parts = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/London", month: "2-digit", day: "2-digit" }).formatToParts(now);
+  const get = (t: string) => parts.find((x) => x.type === t)?.value ?? "";
+  const md = `${get("month")}-${get("day")}`;
+  const { from, until } = p.season;
+  return from <= until ? md >= from && md <= until : md >= from || md <= until;
 }
 
-export function listProducts(): Product[] {
-  return [...PRODUCTS].filter((p) => p.available).sort((a, b) => a.sort - b.sort);
+export function getProduct(id: string, now: Date = new Date()): Product | null {
+  return PRODUCTS.find((p) => p.id === id && p.available && isInSeason(p, now)) ?? null;
+}
+
+export function listProducts(opts: { now?: Date; seasonal?: boolean } = {}): Product[] {
+  const now = opts.now ?? new Date();
+  return [...PRODUCTS]
+    .filter((p) => p.available && isInSeason(p, now) && (opts.seasonal === undefined || Boolean(p.season) === opts.seasonal))
+    .sort((a, b) => a.sort - b.sort);
+}
+
+/** Label for a chosen option value, e.g. scent id → "Winter spice". */
+export function describeOptions(productId: string, options: Record<string, string> | undefined): string {
+  if (!options?.scent) return "";
+  const product = PRODUCTS.find((p) => p.id === productId);
+  const scent = product?.scentOptions?.find((s) => s.id === options.scent);
+  return scent ? `${scent.label} fragrance` : "";
 }
 
 export function formatPrice(minor: number, currency = "GBP", locale = "en-GB"): string {
@@ -83,8 +131,8 @@ export function formatPrice(minor: number, currency = "GBP", locale = "en-GB"): 
 }
 
 /** Server-side order total. Never trust a client-supplied amount. */
-export function priceOrder(productId: string, quantity = 1): { subtotalMinor: number; shippingMinor: number; totalMinor: number; product: Product } | null {
-  const product = getProduct(productId);
+export function priceOrder(productId: string, quantity = 1, now: Date = new Date()): { subtotalMinor: number; shippingMinor: number; totalMinor: number; product: Product } | null {
+  const product = getProduct(productId, now);
   if (!product) return null;
   const qty = Math.max(1, Math.min(5, Math.floor(quantity)));
   const subtotalMinor = product.priceMinor * qty;

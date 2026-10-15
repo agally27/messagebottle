@@ -1,6 +1,7 @@
 import "server-only";
 import { env } from "@/lib/config/env";
 import { getStore } from "@/lib/data";
+import { describeOptions } from "@/lib/config/products";
 import type { Gift, Order, UserProfile } from "@/lib/domain/types";
 import { createPendingOrder, markOrderPaid, OrderError, paymentEventRecord } from "@/lib/orders/service";
 import { newId } from "@/lib/utils/ids";
@@ -17,7 +18,7 @@ export function demoCheckoutAvailable(): boolean {
  * Starts checkout for a gift. Stripe when configured; otherwise, in demo mode
  * only, a labelled demo payment that marks the order paid without charging.
  */
-export async function startCheckout(user: UserProfile, gift: Gift, input: { productId: string; shippingAddress?: unknown }): Promise<CheckoutStart> {
+export async function startCheckout(user: UserProfile, gift: Gift, input: { productId: string; shippingAddress?: unknown; options?: { scent?: unknown } }): Promise<CheckoutStart> {
   const order = await createPendingOrder(user, gift, input);
   if (stripeConfigured()) {
     const stripe = getStripe();
@@ -29,7 +30,7 @@ export async function startCheckout(user: UserProfile, gift: Gift, input: { prod
       line_items: [
         ...order.items.map((item) => ({
           quantity: item.quantity,
-          price_data: { currency: "gbp", unit_amount: item.unitPriceMinor, product_data: { name: item.name, description: `For ${gift.input.recipientName}` } },
+          price_data: { currency: "gbp", unit_amount: item.unitPriceMinor, product_data: { name: describeOptions(item.productId, item.options) ? `${item.name} — ${describeOptions(item.productId, item.options)}` : item.name, description: `For ${gift.input.recipientName}` } },
         })),
         ...(order.shippingMinor > 0 ? [{ quantity: 1, price_data: { currency: "gbp", unit_amount: order.shippingMinor, product_data: { name: "UK delivery" } } }] : []),
       ],

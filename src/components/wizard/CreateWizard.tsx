@@ -9,6 +9,7 @@ import { createGiftAction } from "@/lib/actions/gifts";
 import { stepSchemas, formatIssues } from "@/lib/domain/schemas";
 import { OCCASION_IDS, getOccasion } from "@/lib/domain/occasions";
 import { THEME_IDS } from "@/lib/domain/themes";
+import { isCarol } from "@/lib/domain/music";
 import type { GiftInput, OccasionId, ThemeId } from "@/lib/domain/types";
 import { clearDraft, DEFAULT_INPUT, loadDraft, saveDraft } from "./draft";
 import { OccasionStep } from "./steps/OccasionStep";
@@ -50,6 +51,8 @@ export function CreateWizard({ demoMode, signedIn, requiresSignIn }: { demoMode:
       const occ = getOccasion(input.occasion);
       input.tone = occ.defaultTone;
       input.theme = occ.suggestedThemes[0] ?? input.theme;
+      if (occ.defaultMusic) input.music = occ.defaultMusic;
+      else if (isCarol(input.music)) input.music = "piano";
     }
     const themeParam = params.get("theme");
     if (themeParam && (THEME_IDS as readonly string[]).includes(themeParam)) input.theme = themeParam as ThemeId;
@@ -80,6 +83,8 @@ export function CreateWizard({ demoMode, signedIn, requiresSignIn }: { demoMode:
         const occ = getOccasion(patch.occasion);
         next.tone = occ.defaultTone;
         next.theme = occ.suggestedThemes[0] ?? prev.theme;
+        if (occ.defaultMusic) next.music = occ.defaultMusic;
+        else if (isCarol(next.music)) next.music = "piano";
         if (patch.occasion === "remembrance" && (next.music === "celebratory")) next.music = "peaceful";
       }
       return next;

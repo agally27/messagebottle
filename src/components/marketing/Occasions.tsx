@@ -16,7 +16,7 @@ const ART: Record<string, { theme: ThemeId; motif: Motif; time: TimeOfDay; seed:
 };
 
 export function Occasions() {
-  const items = OCCASIONS.filter((o) => o.id !== "other");
+  const items = OCCASIONS.filter((o) => o.id !== "other" && o.id !== "christmas");
   return (
     <section id="occasions" className="scroll-mt-20 bg-paper py-16 sm:py-24 border-y border-line">
       <div className="container-page">

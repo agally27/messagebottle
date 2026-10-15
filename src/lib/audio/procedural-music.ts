@@ -1,4 +1,15 @@
 import { getMusicMood } from "@/lib/domain/music";
+import { CAROLS, type Carol } from "@/lib/domain/carols";
+
+interface CarolEvent {
+  /** Beats from the start of the song. */
+  at: number;
+  beats: number;
+  midi: number | null;
+  /** Chord tones (MIDI) to strike with this event, at bar starts. */
+  chord: number[] | null;
+  beatInBar: number;
+}
 import type { MusicMoodId } from "@/lib/domain/types";
 
 /**
@@ -59,7 +70,7 @@ export class ProceduralMusic {
     const ctx = this.ensureContext();
     if (!ctx || !this.master) return false;
     const m = getMusicMood(mood);
-    if (!m.procedural) return false;
+    if (!m.procedural && !m.carol) return false;
     if (ctx.state === "suspended") {
       try {
         await ctx.resume();
@@ -130,6 +141,11 @@ export class ProceduralMusic {
   }
 
   private schedule() {
+    const carolId = this.mood ? getMusicMood(this.mood).carol : undefined;
+    if (carolId) {
+      this.scheduleCarol(CAROLS[carolId]);
+      return;
+    }
     const tick = () => {
       if (!this.ctx || !this.mood) return;
       const m = getMusicMood(this.mood).procedural!;
@@ -139,6 +155,99 @@ export class ProceduralMusic {
         this.playBeat(this.nextBeatTime, this.beat, m);
         this.nextBeatTime += beatLen;
         this.beat += 1;
+      }
+    };
+    tick();
+    this.timer = window.setInterval(tick, 120);
+  }
+
+  /** Flattens a carol into timed events: melody notes plus chords on each bar start. */
+  static carolEvents(c: Carol): { events: CarolEvent[]; lengthBeats: number } {
+    const scale = [0, 2, 4, 5, 7, 9, 11];
+    const triad = (degree: number) => [0, 2, 4].map((k) => {
+      const idx = degree + k;
+      return c.tonic - 12 + scale[idx % 7]! + Math.floor(idx / 7) * 12;
+    });
+    const events: CarolEvent[] = [];
+    let at = 0;
+    for (const [semi, beats] of c.pickup ?? []) {
+      events.push({ at, beats, midi: semi === null ? null : c.tonic + semi, chord: null, beatInBar: at });
+      at += beats;
+    }
+    for (const bar of c.bars) {
+      const barStart = at;
+      bar.notes.forEach(([semi, beats], i) => {
+        events.push({ at, beats, midi: semi === null ? null : c.tonic + semi, chord: i === 0 && bar.chord !== null ? triad(bar.chord) : null, beatInBar: at - barStart });
+        at += beats;
+      });
+    }
+    return { events, lengthBeats: at };
+  }
+
+  private noise: AudioBuffer | null = null;
+
+  private sleighBell(time: number, gain: number) {
+    if (!this.ctx || !this.master) return;
+    if (!this.noise) {
+      const len = Math.floor(this.ctx.sampleRate * 0.25);
+      this.noise = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
+      const data = this.noise.getChannelData(0);
+      for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+    }
+    const src = this.ctx.createBufferSource();
+    src.buffer = this.noise;
+    const hp = this.ctx.createBiquadFilter();
+    hp.type = "highpass";
+    hp.frequency.value = 7000;
+    const g = this.ctx.createGain();
+    g.gain.setValueAtTime(0.0001, time);
+    g.gain.exponentialRampToValueAtTime(gain, time + 0.005);
+    g.gain.exponentialRampToValueAtTime(0.0001, time + 0.16);
+    src.connect(hp);
+    hp.connect(g);
+    g.connect(this.master);
+    src.start(time);
+    src.stop(time + 0.2);
+  }
+
+  private scheduleCarol(c: Carol) {
+    if (!this.ctx) return;
+    const { events, lengthBeats } = ProceduralMusic.carolEvents(c);
+    const beatLen = 60 / c.bpm;
+    const restBeats = c.beatsPerBar * 2; // a breath before the tune repeats
+    let songStart = this.nextBeatTime;
+    let idx = 0;
+    let lastBell = -1;
+    const melodyType: OscillatorType = c.voice === "pluck" ? "square" : c.voice === "piano" ? "triangle" : "sine";
+    const tick = () => {
+      if (!this.ctx) return;
+      const horizon = this.ctx.currentTime + 0.4;
+      while (true) {
+        const ev = events[idx];
+        if (!ev) {
+          songStart += (lengthBeats + restBeats) * beatLen;
+          idx = 0;
+          lastBell = -1;
+          continue;
+        }
+        const t = songStart + ev.at * beatLen;
+        if (t >= horizon) break;
+        if (ev.midi !== null) {
+          const dur = Math.max(0.12, ev.beats * beatLen * 0.92);
+          this.voice(this.midiToHz(ev.midi), t, dur, c.voice === "pluck" ? 0.075 : 0.12, melodyType, 0.01, c.voice === "bell");
+        }
+        if (ev.chord) {
+          const barDur = c.beatsPerBar * beatLen;
+          this.voice(this.midiToHz(ev.chord[0]! - 12), t, barDur * 0.95, 0.12, "sine", 0.05);
+          for (const n of ev.chord) this.voice(this.midiToHz(n), t, barDur * 0.9, 0.035, "triangle", 0.12);
+        }
+        if (c.sleighBells) {
+          // one shimmer per beat, aligned to the song's beat grid
+          const beatIndex = Math.floor(ev.at);
+          for (let bi = lastBell + 1; bi <= beatIndex; bi++) this.sleighBell(songStart + bi * beatLen, bi % c.beatsPerBar === 0 ? 0.05 : 0.025);
+          lastBell = Math.max(lastBell, beatIndex);
+        }
+        idx += 1;
       }
     };
     tick();

@@ -26,6 +26,8 @@ Remembrance is handled with particular care: gentle language, no celebratory opt
 | Little Bottle | + glass keepsake bottle, printed rolled message, ribbon, QR card, gift packaging | £16.99 + £3.95 UK delivery |
 | Keepsake Gift Box | + lined gift box, printed story booklet, dedication card | £34.99, delivery included |
 
+| Christmas Bottle (seasonal, 1 Oct – 18 Dec) | Christmas card printed and rolled inside, red ribbon and faux holly, lightly scented card (winter spice, fireside pine or unscented), QR to the story with a personalised carol | £19.99 + £3.95 UK delivery |
+
 Prices are configuration (`src/lib/config/products.ts`). Before going live, validate against generation costs, payment fees, materials, packaging, fulfilment, shipping, returns and VAT. No supplier, stock or delivery promises exist yet; physical fulfilment starts manual (admin view, print-ready message, QR code).
 
 ## Language
@@ -33,3 +35,10 @@ Warm, plain, specific. No exclamation-mark enthusiasm, no emoji, no "AI magic". 
 
 ## Not in v1
 Subscriptions, voice cloning, multiple languages, social sharing walls, automated suppliers.
+
+## Christmas
+A seasonal occasion and product. Choosing Christmas defaults to the **Winter wonderland** look (snow, fir trees, fairy lights) and a **carol**: Silent Night, We Wish You a Merry Christmas, Jingle Bells or Deck the Halls. The tune plays on the recipient's device; we write new words that include the recipient's and sender's names, shown as a "A carol for you" scene so the family can sing along. Nothing is sung aloud yet: a singing voice needs a music or voice provider (see docs/AI_PROVIDERS.md). Names can be families ("Grandma and Grandad", "the Patel family"), so it works from a family or for one.
+
+The physical Christmas Bottle is only sold inside its window (`season` in `src/lib/config/products.ts`, UK dates); the landing and pricing pages show its section only then and refresh hourly.
+
+Before selling: source the scented paper or fragrance from a supplier who provides UK CLP / allergen information, label the packaging accordingly, and keep an unscented option. Confirm last posting dates with the carrier each year; the site deliberately makes no delivery-by-Christmas promise.

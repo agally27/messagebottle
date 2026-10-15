@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { OptionCard } from "@/components/ui/OptionCard";
 import { Notice } from "@/components/ui/Notice";
-import { MUSIC_MOODS } from "@/lib/domain/music";
+import { moodsForOccasion } from "@/lib/domain/music";
 import type { MusicMoodId } from "@/lib/domain/types";
 import { ProceduralMusic } from "@/lib/audio/procedural-music";
 import type { StepProps } from "../CreateWizard";
@@ -30,7 +30,9 @@ export function SoundStep({ input, update }: StepProps) {
     setPreviewing(ok ? mood : null);
   };
 
-  const moods = input.occasion === "remembrance" ? MUSIC_MOODS.filter((m) => m.id !== "celebratory") : MUSIC_MOODS;
+  // Carols first at Christmas.
+  const moods = [...moodsForOccasion(input.occasion)].sort((a, b) => Number(Boolean(b.carol)) - Number(Boolean(a.carol)));
+  const carolChosen = moods.find((m) => m.id === input.music)?.carol;
 
   return (
     <div>
@@ -39,7 +41,7 @@ export function SoundStep({ input, update }: StepProps) {
         {moods.map((m) => (
           <div key={m.id} className="relative">
             <OptionCard name="music" value={m.id} checked={input.music === m.id} onChange={(v) => update({ music: v as MusicMoodId })} title={m.label} description={m.description} compact className="h-full pr-24" />
-            {m.procedural ? (
+            {m.procedural || m.carol ? (
               <button
                 type="button"
                 onClick={() => void toggle(m.id)}
@@ -54,9 +56,15 @@ export function SoundStep({ input, update }: StepProps) {
           </div>
         ))}
       </div>
-      <Notice tone="demo" className="mt-5">
-        Soundtracks are currently demonstration pieces generated on the device from the mood you choose. No copyrighted music is used. A generated-music service can be connected later without changing your gift.
-      </Notice>
+      {carolChosen ? (
+        <Notice tone="info" className="mt-5" title="A carol, with words for them">
+          The traditional tune is played softly on bells or piano, and we write new words for it with {input.recipientName || "their"} name{input.recipientName ? "" : "s"} and yours. They appear in the story so the family can sing along. No recording is used, so nothing is sung aloud.
+        </Notice>
+      ) : (
+        <Notice tone="demo" className="mt-5">
+          Soundtracks are currently demonstration pieces generated on the device from the mood you choose. No copyrighted music is used. A generated-music service can be connected later without changing your gift.
+        </Notice>
+      )}
 
       <fieldset className="mt-8">
         <legend className="text-sm font-semibold text-ink">Narration</legend>

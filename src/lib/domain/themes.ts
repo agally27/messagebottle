@@ -2,7 +2,7 @@
  * Visual themes. Each theme drives the palette, typography mood, motion and
  * the procedural scene art used when no image provider is configured.
  */
-export type ThemeId = "storybook" | "cinematic" | "watercolour" | "minimal" | "ocean" | "keepsake";
+export type ThemeId = "storybook" | "cinematic" | "watercolour" | "minimal" | "ocean" | "keepsake" | "winter";
 
 export interface ThemePalette {
   /** Scene background (deep). */
@@ -150,6 +150,25 @@ export const THEMES: readonly Theme[] = [
     mode: "light",
     typography: "serif",
     motion: 0.45,
+  },
+  {
+    id: "winter",
+    name: "Winter wonderland",
+    description: "Falling snow, fir trees and the glow of fairy lights. Made for Christmas.",
+    artDirection:
+      "snowy winter night, fir trees with warm fairy lights, falling snow, deep pine green and berry red with gold light, cosy and festive",
+    palette: {
+      bg: "#122820",
+      bg2: "#1f4136",
+      ink: "#f7f1e6",
+      inkMuted: "#c9d6cc",
+      accent: "#f2c46d",
+      accent2: "#b8403a",
+      paper: "#f7f1e6",
+    },
+    mode: "dark",
+    typography: "serif",
+    motion: 0.7,
   },
 ] as const;
 

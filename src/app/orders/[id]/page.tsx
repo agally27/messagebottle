@@ -8,7 +8,7 @@ import { Notice } from "@/components/ui/Notice";
 import { SharePanel } from "@/components/gift/SharePanel";
 import { requireUserOrRedirect } from "@/lib/auth/guards";
 import { env } from "@/lib/config/env";
-import { formatPrice } from "@/lib/config/products";
+import { describeOptions, formatPrice } from "@/lib/config/products";
 import { getStore } from "@/lib/data";
 import { publicGiftUrl } from "@/lib/gifts/service";
 import { orderRef } from "@/lib/orders/service";
@@ -54,7 +54,7 @@ export default async function OrderPage({ params }: PageProps<"/orders/[id]">) {
 
       <dl className="mt-8 space-y-2 rounded-xl border border-line bg-paper p-5 text-sm">
         {order.items.map((i) => (
-          <div key={i.productId} className="flex justify-between"><dt className="text-text-muted">{i.name} × {i.quantity}</dt><dd>{formatPrice(i.unitPriceMinor * i.quantity)}</dd></div>
+          <div key={i.productId} className="flex justify-between"><dt className="text-text-muted">{i.name}{describeOptions(i.productId, i.options) ? ` · ${describeOptions(i.productId, i.options)}` : ""} × {i.quantity}</dt><dd>{formatPrice(i.unitPriceMinor * i.quantity)}</dd></div>
         ))}
         {order.shippingMinor ? <div className="flex justify-between"><dt className="text-text-muted">Delivery</dt><dd>{formatPrice(order.shippingMinor)}</dd></div> : null}
         <div className="flex justify-between border-t border-line pt-2 font-semibold text-ink"><dt>Total</dt><dd>{formatPrice(order.totalMinor)}</dd></div>

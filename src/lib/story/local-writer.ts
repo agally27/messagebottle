@@ -140,6 +140,7 @@ function chunk<T>(items: T[], groups: number): T[][] {
 const STORY_HEADINGS: Record<string, string[]> = {
   default: ["Where this begins", "What I see in you", "The things I don't say enough", "Between us", "What stays", "From here"],
   love: ["Where it began", "What you are to me", "The ordinary days", "What I know for certain", "From here on"],
+  christmas: ["This Christmas", "What this year held", "Around the table", "What I wish for you", "Merry Christmas"],
   birthday: ["Another year of you", "What this year showed me", "What I wish for you", "And always"],
   encouragement: ["What is true", "What you've already done", "What I'm here for", "Hold on to this"],
   remembrance: ["In the quiet", "What they were", "What remains", "For now"],

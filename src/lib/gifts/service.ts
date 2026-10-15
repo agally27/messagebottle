@@ -1,6 +1,7 @@
 import "server-only";
 import { env } from "@/lib/config/env";
 import { getProduct } from "@/lib/config/products";
+import { getMusicMood, musicDisclosure } from "@/lib/domain/music";
 import { getStore } from "@/lib/data";
 import type { GenerationJob, Gift, GiftInput, PublicGift, Story, UserProfile } from "@/lib/domain/types";
 import { giftInputSchema, giftSettingsEditSchema, storyEditSchema } from "@/lib/domain/schemas";
@@ -153,7 +154,7 @@ export async function applyGiftSettings(gift: Gift, raw: unknown): Promise<Gift>
   }
   if (edits.music !== undefined && edits.music !== gift.input.music) {
     const others = audio.filter((a) => a.kind !== "music");
-    audio = edits.music === "none" ? others : [...others, { kind: "music", source: { type: "procedural", mood: edits.music }, provider: "procedural", label: edits.music, disclosure: "Demonstration soundtrack, generated on your device from the chosen mood." }];
+    audio = edits.music === "none" ? others : [...others, { kind: "music", source: { type: "procedural", mood: edits.music }, provider: "procedural", label: getMusicMood(edits.music).label, disclosure: musicDisclosure(edits.music) }];
   }
   const updated = await getStore().gifts.update(gift.id, { input, story, audio });
   await audit("gift.settings_edited", "gift", gift.id, gift.ownerId, { keys: Object.keys(edits).join(",") });

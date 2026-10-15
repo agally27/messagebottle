@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { Notice } from "@/components/ui/Notice";
 import { completeDemoPaymentAction } from "@/lib/actions/orders";
 import { requireUserOrRedirect } from "@/lib/auth/guards";
-import { formatPrice } from "@/lib/config/products";
+import { describeOptions, formatPrice } from "@/lib/config/products";
 import { getStore } from "@/lib/data";
 import { demoCheckoutAvailable } from "@/lib/payments/checkout";
 
@@ -35,7 +35,7 @@ export default async function DemoPaymentPage({ params, searchParams }: PageProp
       </Notice>
       <dl className="mt-6 space-y-2 rounded-xl border border-line bg-paper p-5 text-sm">
         {order.items.map((i) => (
-          <div key={i.productId} className="flex justify-between"><dt>{i.name} × {i.quantity}</dt><dd>{formatPrice(i.unitPriceMinor * i.quantity)}</dd></div>
+          <div key={i.productId} className="flex justify-between"><dt>{i.name}{describeOptions(i.productId, i.options) ? ` · ${describeOptions(i.productId, i.options)}` : ""} × {i.quantity}</dt><dd>{formatPrice(i.unitPriceMinor * i.quantity)}</dd></div>
         ))}
         {order.shippingMinor ? <div className="flex justify-between"><dt>Delivery</dt><dd>{formatPrice(order.shippingMinor)}</dd></div> : null}
         <div className="flex justify-between border-t border-line pt-2 font-semibold text-ink"><dt>Total</dt><dd>{formatPrice(order.totalMinor)}</dd></div>

@@ -21,6 +21,7 @@ export default async function PrintPage({ params }: PageProps<"/gifts/[id]/print
   if (!gift || (gift.ownerId !== user.id && !user.isAdmin)) notFound();
   const url = publicGiftUrl(gift);
   const qr = await QRCode.toDataURL(url, { width: 360, margin: 1, errorCorrectionLevel: "M", color: { dark: "#14213dff", light: "#ffffff00" } });
+  const christmas = gift.input.occasion === "christmas";
   const paragraphs = gift.input.message.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
   return (
     <div className="min-h-dvh bg-white text-ink font-sans">
@@ -32,12 +33,14 @@ export default async function PrintPage({ params }: PageProps<"/gifts/[id]/print
             <a href={`/api/gifts/${gift.id}/qr?size=1024`} className="rounded-full border border-line-strong px-4 py-2 font-semibold text-ink" download>QR only</a>
           </div>
         </div>
-        <main className="mx-auto max-w-[148mm] px-6 pb-16 pt-20 print:px-0 print:pt-0">
+        <main className={`relative mx-auto max-w-[148mm] px-6 pb-16 pt-20 print:px-0 print:pt-0 ${christmas ? "outline outline-2 outline-offset-[10px] outline-[#b8403a]/50 print:outline-[#b8403a]" : ""}`}>
+          {christmas ? <Holly className="absolute -right-2 top-16 h-16 w-16 print:top-0" /> : null}
           <header className="flex items-center gap-2 text-ink">
             <BottleMark className="h-6 text-ocean" />
             <span className="font-display text-base">Message in a Bottle</span>
           </header>
-          <p className="mt-10 text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-teal">For {gift.input.recipientName}</p>
+          {christmas ? <p className="mt-8 font-hand text-4xl text-[#b8403a]">Merry Christmas</p> : null}
+          <p className={`${christmas ? "mt-3" : "mt-10"} text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-teal`}>For {gift.input.recipientName}</p>
           <h1 className="mt-2 font-display text-[1.75rem] leading-tight">{gift.story?.title ?? `A message for ${gift.input.recipientName}`}</h1>
           <section className="mt-8 space-y-4 font-display text-[1.02rem] leading-[1.7]">
             {paragraphs.map((p, i) => (
@@ -62,5 +65,17 @@ export default async function PrintPage({ params }: PageProps<"/gifts/[id]/print
           </footer>
         </main>
     </div>
+  );
+}
+
+function Holly({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 64 64" className={className} aria-hidden>
+      <path d="M30 34 C18 30 10 18 14 8 C20 14 26 12 30 20 C32 12 40 12 42 18 C36 22 36 30 30 34 Z" fill="#2f6b4f" />
+      <path d="M34 34 C44 38 56 34 58 24 C50 26 46 20 40 24 C42 16 36 12 32 16 C36 22 32 28 34 34 Z" fill="#3d8261" />
+      <circle cx="31" cy="37" r="5" fill="#c9302c" />
+      <circle cx="39" cy="40" r="4.4" fill="#b8403a" />
+      <circle cx="27" cy="44" r="4" fill="#c9302c" />
+    </svg>
   );
 }

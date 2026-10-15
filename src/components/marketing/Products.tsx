@@ -9,7 +9,7 @@ import bottlePhoto from "@/assets/brand/bottle-keepsake.jpg";
 import boxPhoto from "@/assets/brand/box-closed.jpg";
 
 export function Products({ heading = true }: { heading?: boolean }) {
-  const products = listProducts();
+  const products = listProducts({ seasonal: false });
   return (
     <section id="pricing" className="scroll-mt-20 py-16 sm:py-24">
       <div className="container-page">

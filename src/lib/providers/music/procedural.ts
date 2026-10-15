@@ -1,4 +1,4 @@
-import { getMusicMood } from "@/lib/domain/music";
+import { getMusicMood, musicDisclosure } from "@/lib/domain/music";
 import type { MusicMoodId } from "@/lib/domain/types";
 import type { MusicProvider, MusicResult } from "../types";
 
@@ -16,7 +16,7 @@ export class ProceduralMusicProvider implements MusicProvider {
     return {
       source: { type: "procedural", mood },
       label: m.label,
-      disclosure: "Demonstration soundtrack, generated on your device from the chosen mood.",
+      disclosure: musicDisclosure(mood),
     };
   }
 }

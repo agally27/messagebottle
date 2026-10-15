@@ -1,4 +1,5 @@
 import { BrandMoment } from "@/components/marketing/BrandMoment";
+import { ChristmasSection } from "@/components/marketing/ChristmasSection";
 import { Experience } from "@/components/marketing/Experience";
 import { InsideTheBox } from "@/components/marketing/InsideTheBox";
 import { FAQ } from "@/components/marketing/FAQ";
@@ -12,6 +13,7 @@ export default function HomePage() {
   return (
     <>
       <Hero />
+      <ChristmasSection />
       <HowItWorks />
       <InsideTheBox />
       <Experience />
@@ -23,3 +25,6 @@ export default function HomePage() {
     </>
   );
 }
+
+/** Re-check the seasonal (Christmas) window hourly. */
+export const revalidate = 3600;

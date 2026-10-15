@@ -290,6 +290,68 @@ function City({ ctx }: { ctx: Ctx }) {
   );
 }
 
+function Fir({ ctx, x, y, scale = 1, lights = true }: { ctx: Ctx; x: number; y: number; scale?: number; lights?: boolean }) {
+  const p = ctx.theme.palette;
+  const { rng } = ctx;
+  const tiers = [
+    { w: 230, top: -120, base: 0 },
+    { w: 190, top: -230, base: -90 },
+    { w: 150, top: -330, base: -190 },
+    { w: 100, top: -410, base: -285 },
+  ];
+  const green = ctx.theme.id === "winter" ? "#2f6b4f" : p.accent2;
+  return (
+    <g transform={`translate(${x} ${y}) scale(${scale})`}>
+      <rect x={-14} y={-10} width={28} height={40} fill="#5a3b25" />
+      {tiers.map((t, i) => (
+        <g key={i}>
+          <path d={`M${-t.w / 2} ${t.base} L0 ${t.top} L${t.w / 2} ${t.base} Z`} fill={green} opacity={0.95} />
+          <path d={`M${-t.w / 2} ${t.base} q${t.w / 4} -14 ${t.w / 2} 0 q${t.w / 4} -14 ${t.w / 2} 0`} fill="#ffffff" opacity={0.85} />
+        </g>
+      ))}
+      <path d="M0 -440 l9 18 20 3 -15 13 4 20 -18 -10 -18 10 4 -20 -15 -13 20 -3z" fill={p.accent} />
+      {lights
+        ? Array.from({ length: 26 }).map((_, i) => {
+            const t = rng.range(0.08, 0.98);
+            const yy = -420 * (1 - t) + rng.range(-8, 8);
+            const half = 115 * t;
+            const xx = rng.range(-half, half);
+            const c = rng.pick([p.accent, "#ffd98a", "#f0b45e", p.accent2]);
+            return (
+              <g key={i}>
+                <circle cx={xx} cy={yy} r={9} fill={c} opacity={0.25} />
+                <circle cx={xx} cy={yy} r={3.4} fill={c} />
+              </g>
+            );
+          })
+        : null}
+    </g>
+  );
+}
+
+function SnowGround({ ctx }: { ctx: Ctx }) {
+  return (
+    <g>
+      <path d={wavePath(H * 0.82, 14, 520, 0.6)} fill="#e9eef0" opacity={0.95} />
+      <path d={wavePath(H * 0.9, 10, 380, 2.1)} fill="#ffffff" opacity={0.95} />
+      {Array.from({ length: 5 }).map((_, i) => (
+        <Fir key={i} ctx={ctx} x={ctx.rng.range(0, W)} y={H * 0.84} scale={ctx.rng.range(0.18, 0.32)} lights={false} />
+      ))}
+    </g>
+  );
+}
+
+function Snowfall({ ctx }: { ctx: Ctx }) {
+  const { rng } = ctx;
+  return (
+    <g>
+      {Array.from({ length: 90 }).map((_, i) => (
+        <circle key={i} cx={rng.range(0, W)} cy={rng.range(0, H)} r={rng.range(1.2, 4.2)} fill="#ffffff" opacity={rng.range(0.45, 0.95)} />
+      ))}
+    </g>
+  );
+}
+
 function Bokeh({ ctx }: { ctx: Ctx }) {
   const p = ctx.theme.palette;
   const { rng } = ctx;
@@ -387,6 +449,15 @@ function MotifLayer({ ctx }: { ctx: Ctx }) {
           <Water ctx={ctx} y={H * 0.78} />
         </>
       );
+    case "fir":
+      return (
+        <>
+          <SnowGround ctx={ctx} />
+          <Fir ctx={ctx} x={W * rng.range(0.4, 0.6)} y={H * 0.86} scale={1.05} />
+          {/* front drift hides the trunk's base */}
+          <path d={wavePath(H * 0.875, 9, 420, 1.3)} fill="#ffffff" opacity={0.97} />
+        </>
+      );
   }
 }
 
@@ -430,6 +501,7 @@ export function SceneArt({ spec, alt, className }: { spec: SceneArtSpec; alt?: s
       <Sky ctx={ctx} />
       <MotifLayer ctx={ctx} />
       {theme.id === "cinematic" || theme.id === "ocean" ? <Bokeh ctx={ctx} /> : null}
+      {theme.id === "winter" ? <Snowfall ctx={ctx} /> : null}
       <Vignette ctx={ctx} />
       <Grain ctx={ctx} />
     </svg>

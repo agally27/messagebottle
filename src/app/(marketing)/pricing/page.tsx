@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Products } from "@/components/marketing/Products";
+import { ChristmasSection } from "@/components/marketing/ChristmasSection";
 import { FAQ } from "@/components/marketing/FAQ";
 
 export const metadata: Metadata = { title: "Pricing", description: "Digital stories from £4.99. Keepsake bottles and gift boxes with your message inside." };
@@ -15,7 +16,11 @@ export default function PricingPage() {
         </div>
       </section>
       <Products heading={false} />
+      <ChristmasSection />
       <FAQ />
     </>
   );
 }
+
+/** Re-check the seasonal (Christmas) window hourly. */
+export const revalidate = 3600;

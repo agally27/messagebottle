@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils/cn";
  * a heart, and a string of warm fairy lights inside. Pure SVG so it is crisp
  * at any size and can glow on dark or light backgrounds.
  */
-export function GlowingBottle({ className, animated = true, title = "A glass bottle with a rolled message and warm fairy lights inside" }: { className?: string; animated?: boolean; title?: string }) {
+export function GlowingBottle({ className, animated = true, festive = false, title = festive ? "A glowing glass bottle tied with red ribbon and holly, with a rolled Christmas card inside" : "A glass bottle with a rolled message and warm fairy lights inside" }: { className?: string; animated?: boolean; festive?: boolean; title?: string }) {
   const lights: Array<[number, number, number]> = [
     [84, 150, 3.2], [100, 172, 2.6], [78, 196, 3.4], [106, 214, 2.4], [88, 236, 3.0], [112, 252, 2.2], [80, 270, 2.8], [102, 288, 3.2], [92, 310, 2.4], [110, 322, 2.6], [86, 338, 3.0],
   ];
@@ -50,12 +50,27 @@ export function GlowingBottle({ className, animated = true, title = "A glass bot
       <path d="M74 60 h42" stroke="#f1dcbb" strokeWidth="2" opacity="0.7" />
       <path d="M80 70 q15 4 30 0 M79 84 q16 4 32 0" stroke="#8d6538" strokeWidth="1.2" opacity="0.5" fill="none" />
 
-      {/* twine + heart tag */}
-      <path d="M70 108 c-10 10 -22 10 -30 24" stroke="#b8946a" strokeWidth="2.2" fill="none" strokeLinecap="round" />
-      <path d="M72 106 c6 8 18 10 26 18" stroke="#b8946a" strokeWidth="2.2" fill="none" strokeLinecap="round" />
-      <g transform="translate(36 134) rotate(-18)">
-        <path d="M0 6 C0 -2 10 -2 10 6 C10 -2 20 -2 20 6 C20 14 10 20 10 20 C10 20 0 14 0 6 Z" fill="#e7d6bb" stroke="#b8946a" strokeWidth="1.4" />
-      </g>
+      {festive ? (
+        <g>
+          {/* red ribbon bow + holly */}
+          <path d="M66 104 h58 v8 h-58 z" fill="#b8403a" />
+          <path d="M95 108 c-14 -14 -30 -10 -26 2 c4 10 20 4 26 -2 z M95 108 c14 -14 30 -10 26 2 c-4 10 -20 4 -26 -2 z" fill="#c9483f" stroke="#8f2f2a" strokeWidth="1" />
+          <path d="M95 110 l-10 26 M95 110 l10 26" stroke="#b8403a" strokeWidth="4" strokeLinecap="round" />
+          <path d="M60 96 c6 -12 18 -12 22 -2 c-8 -2 -10 6 -22 2 z" fill="#2f6b4f" />
+          <path d="M58 104 c-2 -12 8 -18 16 -12 c-8 2 -6 8 -16 12 z" fill="#3d8261" />
+          <circle cx="70" cy="100" r="3.6" fill="#c9302c" />
+          <circle cx="76" cy="103" r="3.2" fill="#c9302c" />
+        </g>
+      ) : (
+        <g>
+          {/* twine + heart tag */}
+          <path d="M70 108 c-10 10 -22 10 -30 24" stroke="#b8946a" strokeWidth="2.2" fill="none" strokeLinecap="round" />
+          <path d="M72 106 c6 8 18 10 26 18" stroke="#b8946a" strokeWidth="2.2" fill="none" strokeLinecap="round" />
+          <g transform="translate(36 134) rotate(-18)">
+            <path d="M0 6 C0 -2 10 -2 10 6 C10 -2 20 -2 20 6 C20 14 10 20 10 20 C10 20 0 14 0 6 Z" fill="#e7d6bb" stroke="#b8946a" strokeWidth="1.4" />
+          </g>
+        </g>
+      )}
 
       {/* glass body */}
       <path d="M68 100 h54 v18 c0 6 2 10 7 16 c10 12 18 24 18 42 v178 a22 22 0 0 1 -22 22 h-60 a22 22 0 0 1 -22 -22 v-178 c0 -18 8 -30 18 -42 c5 -6 7 -10 7 -16 z" fill="#dfeef0" opacity="0.28" />
@@ -64,7 +79,14 @@ export function GlowingBottle({ className, animated = true, title = "A glass bot
       {/* rolled note */}
       <g transform="rotate(-9 95 250)">
         <rect x="80" y="170" width="30" height="130" rx="6" fill="url(#gb-paper)" stroke="#c9ad83" strokeWidth="1" />
-        <path d="M95 232 c-6 -8 -16 -2 -10 6 c4 5 10 9 10 9 c0 0 6 -4 10 -9 c6 -8 -4 -14 -10 -6 z" fill="none" stroke="#8a6a1e" strokeWidth="1.6" />
+        {festive ? (
+          <g>
+            <path d="M95 222 l-11 20 h7 l-9 16 h26 l-9 -16 h7 z" fill="#2f6b4f" />
+            <path d="M95 216 l2 4 4 .5 -3 3 1 4 -4 -2 -4 2 1 -4 -3 -3 4 -.5z" fill="#c9a961" />
+          </g>
+        ) : (
+          <path d="M95 232 c-6 -8 -16 -2 -10 6 c4 5 10 9 10 9 c0 0 6 -4 10 -9 c6 -8 -4 -14 -10 -6 z" fill="none" stroke="#8a6a1e" strokeWidth="1.6" />
+        )}
         <path d="M86 196 h18 M86 206 h14 M86 258 h18 M86 268 h12" stroke="#b8946a" strokeWidth="1.2" strokeLinecap="round" opacity="0.7" />
       </g>
       {/* fairy-light wire */}
@@ -73,7 +95,7 @@ export function GlowingBottle({ className, animated = true, title = "A glass bot
       {lights.map(([x, y, r], i) => (
         <g key={i} className={animated ? "animate-twinkle motion-reduce:animate-none" : undefined} style={animated ? { animationDelay: `${(i * 370) % 3200}ms`, transformOrigin: `${x}px ${y}px` } : undefined}>
           <circle cx={x} cy={y} r={r * 3} fill="#ffd98a" opacity="0.55" filter="url(#gb-glow)" />
-          <circle cx={x} cy={y} r={r} fill="#fff4d6" />
+          <circle cx={x} cy={y} r={r} fill={festive && i % 3 === 1 ? "#ff9a8a" : "#fff4d6"} />
         </g>
       ))}
       {/* glass highlights and outline */}

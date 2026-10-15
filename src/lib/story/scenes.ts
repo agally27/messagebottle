@@ -2,8 +2,11 @@ import { getTheme } from "@/lib/domain/themes";
 import type { Motif, OccasionId, Scene, SceneArtSpec, ThemeId, TimeOfDay } from "@/lib/domain/types";
 import type { StoryDraft } from "@/lib/providers/types";
 import { hashString } from "@/lib/utils/random";
+import { MUSIC_MOODS } from "@/lib/domain/music";
+import { CAROLS, personaliseCarol } from "@/lib/domain/carols";
 
 const KEYWORDS: Array<[Motif, RegExp]> = [
+  ["fir", /\b(christmas|xmas|festive|fir|pine|snow|snowy|carol|carols|sleigh|stocking|mistletoe|holly|santa|tinsel|advent)\b/i],
   ["boat", /\b(boat|sail|sailing|harbour|harbor|ferry|voyage|rowing)\b/i],
   ["shore", /\b(beach|sea|ocean|shore|coast|waves?|tide|sand|seaside|cornwall|devon)\b/i],
   ["stars", /\b(stars?|night sky|midnight|galaxy|moonlight|constellation)\b/i],
@@ -20,6 +23,7 @@ const KEYWORDS: Array<[Motif, RegExp]> = [
 
 const OCCASION_DEFAULTS: Record<OccasionId, Motif[]> = {
   love: ["lantern", "shore", "stars", "window", "path"],
+  christmas: ["fir", "window", "stars", "lantern", "path"],
   birthday: ["garden", "lantern", "tree", "city", "stars"],
   family: ["window", "tree", "garden", "path", "lantern"],
   friendship: ["path", "city", "shore", "tree", "stars"],
@@ -85,6 +89,21 @@ export function altFor(spec: SceneArtSpec): string {
     garden: "a garden in bloom",
     mountains: "mountains above a lake",
     city: "city lights at the water's edge",
+    fir: "a fir tree strung with lights in the snow",
   };
   return `Illustration of ${motifText[spec.motif]} at ${spec.timeOfDay}`;
+}
+
+/** Appends the personalised carol as its own scene when a carol is chosen. */
+export function withCarolScene(draft: StoryDraft, recipientName: string, senderName: string, music: string): StoryDraft {
+  const mood = MUSIC_MOODS.find((m) => m.id === music);
+  if (!mood?.carol) return draft;
+  const carol = CAROLS[mood.carol];
+  if (draft.scenes.some((s) => s.heading === "A carol for you")) return draft;
+  const scene = {
+    heading: "A carol for you",
+    text: `${personaliseCarol(carol.id, recipientName, senderName)}\n\n(Sung to the tune of ${carol.title})`,
+    artPrompt: "snowy fir tree strung with warm lights at night, gentle snowfall, no text",
+  };
+  return { ...draft, scenes: [...draft.scenes.slice(0, 7), scene] };
 }

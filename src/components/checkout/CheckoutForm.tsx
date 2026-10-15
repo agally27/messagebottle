@@ -21,6 +21,7 @@ export function CheckoutForm({ giftId, products, initialProductId, recipientName
   const [productId, setProductId] = useState(products.some((p) => p.id === initialProductId) ? initialProductId : products[0]!.id);
   const [address, setAddress] = useState({ name: "", line1: "", line2: "", city: "", postcode: "", country: "GB", giftNote: "" });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [scent, setScent] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const product = products.find((p) => p.id === productId)!;
@@ -30,7 +31,12 @@ export function CheckoutForm({ giftId, products, initialProductId, recipientName
     setError(null);
     setErrors({});
     startTransition(async () => {
-      const r = await startCheckoutAction(giftId, { productId, shippingAddress: product.requiresShipping ? address : undefined });
+      if (product.scentOptions?.length && !product.scentOptions.some((s) => s.id === scent)) {
+        setErrors({ scent: "Choose a fragrance, or unscented." });
+        setError("Choose a fragrance, or unscented.");
+        return;
+      }
+      const r = await startCheckoutAction(giftId, { productId, shippingAddress: product.requiresShipping ? address : undefined, options: product.scentOptions?.length ? { scent } : undefined });
       if (r && !r.ok) {
         setError(r.error);
         if (r.fieldErrors) setErrors(r.fieldErrors);
@@ -49,6 +55,19 @@ export function CheckoutForm({ giftId, products, initialProductId, recipientName
             ))}
           </div>
         </fieldset>
+
+        {product.scentOptions?.length ? (
+          <fieldset>
+            <legend className="text-lg font-semibold text-ink">Choose the fragrance</legend>
+            <p className="mt-1 text-sm text-text-muted">The card inside is lightly scented, so the season greets them when they uncork it.</p>
+            <div className="mt-4 grid gap-3 sm:grid-cols-3" role="radiogroup" aria-label="Fragrance">
+              {product.scentOptions.map((s) => (
+                <OptionCard key={s.id} name="scent" value={s.id} checked={scent === s.id} onChange={(v) => { setScent(v); setErrors((e) => ({ ...e, scent: "" })); }} title={s.label} description={s.notes} compact />
+              ))}
+            </div>
+            {errors.scent ? <p role="alert" className="mt-2 text-sm text-danger">{errors.scent}</p> : null}
+          </fieldset>
+        ) : null}
 
         {product.requiresShipping ? (
           <fieldset className="space-y-4">
@@ -81,7 +100,7 @@ export function CheckoutForm({ giftId, products, initialProductId, recipientName
       <aside className="h-fit rounded-xl border border-line bg-paper p-5 lg:sticky lg:top-20">
         <h2 className="text-xl">Summary</h2>
         <dl className="mt-4 space-y-2 text-sm">
-          <div className="flex justify-between"><dt className="text-text-muted">{product.name}</dt><dd>{formatPrice(product.priceMinor)}</dd></div>
+          <div className="flex justify-between"><dt className="text-text-muted">{product.name}{product.scentOptions && scent ? ` · ${product.scentOptions.find((s) => s.id === scent)?.label}` : ""}</dt><dd>{formatPrice(product.priceMinor)}</dd></div>
           {product.requiresShipping ? <div className="flex justify-between"><dt className="text-text-muted">UK delivery</dt><dd>{product.shippingMinor ? formatPrice(product.shippingMinor) : "Included"}</dd></div> : null}
           <div className="flex justify-between border-t border-line pt-2 text-base font-semibold text-ink"><dt>Total</dt><dd>{formatPrice(total)}</dd></div>
         </dl>

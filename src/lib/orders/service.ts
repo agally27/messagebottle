@@ -1,5 +1,5 @@
 import "server-only";
-import { formatPrice, priceOrder } from "@/lib/config/products";
+import { describeOptions, formatPrice, priceOrder } from "@/lib/config/products";
 import { getStore } from "@/lib/data";
 import type { Fulfilment, Gift, Order, OrderStatus, PaymentEvent, ShippingAddress, UserProfile } from "@/lib/domain/types";
 import { shippingAddressSchema } from "@/lib/domain/schemas";
@@ -25,12 +25,18 @@ export function orderRef(order: Pick<Order, "id">): string {
  * Creates a pending order with server-side pricing. The client only supplies
  * a product id and, for physical items, a shipping address.
  */
-export async function createPendingOrder(user: UserProfile, gift: Gift, input: { productId: string; shippingAddress?: unknown }): Promise<Order> {
+export async function createPendingOrder(user: UserProfile, gift: Gift, input: { productId: string; shippingAddress?: unknown; options?: { scent?: unknown } }): Promise<Order> {
   if (!gift.story || (gift.status !== "ready" && gift.status !== "active" && gift.status !== "revoked")) {
     throw new OrderError("This gift isn't ready to order yet.", 409);
   }
   const priced = priceOrder(input.productId, 1);
   if (!priced) throw new OrderError("That product isn't available.", 404);
+  const options: Record<string, string> = {};
+  if (priced.product.scentOptions?.length) {
+    const scent = typeof input.options?.scent === "string" ? input.options.scent : "";
+    if (!priced.product.scentOptions.some((s) => s.id === scent)) throw new OrderError("Please choose a fragrance (or unscented).");
+    options.scent = scent;
+  }
   let shippingAddress: ShippingAddress | null = null;
   if (priced.product.requiresShipping) {
     if (!input.shippingAddress) throw new OrderError("Please complete the delivery address.");
@@ -53,7 +59,7 @@ export async function createPendingOrder(user: UserProfile, gift: Gift, input: {
     ownerId: user.id,
     giftId: gift.id,
     status: "pending",
-    items: [{ productId: priced.product.id, name: priced.product.name, quantity: 1, unitPriceMinor: priced.product.priceMinor }],
+    items: [{ productId: priced.product.id, name: priced.product.name, quantity: 1, unitPriceMinor: priced.product.priceMinor, ...(Object.keys(options).length ? { options } : {}) }],
     currency: "GBP",
     subtotalMinor: priced.subtotalMinor,
     shippingMinor: priced.shippingMinor,
@@ -103,7 +109,7 @@ export async function markOrderPaid(orderId: string, payment: { provider: "strip
   if (gift) await activateGift(gift, payment.provider === "demo" ? "demo" : "paid");
   const owner = await store.users.get(order.ownerId);
   if (owner?.email && emailConfigured()) {
-    await sendEmail(orderConfirmationEmail({ to: owner.email, orderRef: orderRef(order), items: order.items.map((i) => `${i.name} × ${i.quantity}`), totalText: formatPrice(order.totalMinor), physical: order.shippingAddress !== null, orderId: order.id, giftId: order.giftId }));
+    await sendEmail(orderConfirmationEmail({ to: owner.email, orderRef: orderRef(order), items: order.items.map((i) => `${i.name}${describeOptions(i.productId, i.options) ? ` (${describeOptions(i.productId, i.options)})` : ""} × ${i.quantity}`), totalText: formatPrice(order.totalMinor), physical: order.shippingAddress !== null, orderId: order.id, giftId: order.giftId }));
   }
   return updated;
 }

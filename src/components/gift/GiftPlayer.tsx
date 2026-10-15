@@ -258,7 +258,7 @@ export function GiftPlayer({ gift, preview, startOpen, embedded, banner, classNa
           <div className={cn("relative max-w-md rounded-3xl px-6 py-8 text-center backdrop-blur-md animate-fade-up sm:px-10", dark ? "bg-black/30 ring-1 ring-white/10" : "bg-white/55 ring-1 ring-black/5")}>
             <div className="relative mx-auto h-36 w-36">
               <div className="absolute inset-0 rounded-full halo blur-md" aria-hidden />
-              <GlowingBottle className={cn("relative mx-auto h-36 w-auto", !reduced && "animate-float")} animated={!reduced} />
+              <GlowingBottle festive={gift.occasion === "christmas"} className={cn("relative mx-auto h-36 w-auto", !reduced && "animate-float")} animated={!reduced} />
             </div>
             <p className={cn("mt-6 text-xs font-semibold uppercase tracking-[0.2em]", mutedColor)}>For {gift.recipientName}</p>
             <h1 className={cn("mt-3 font-display text-4xl leading-tight sm:text-5xl", textColor)}>Someone has a message for you.</h1>
@@ -274,7 +274,7 @@ export function GiftPlayer({ gift, preview, startOpen, embedded, banner, classNa
 
         {stage === "opening" ? (
           <div className="text-center" aria-label="Opening">
-            <GlowingBottle className={cn("mx-auto h-40 w-auto", !reduced && "animate-[uncork_2.2s_var(--ease-in-out-soft)_both]")} animated={!reduced} />
+            <GlowingBottle festive={gift.occasion === "christmas"} className={cn("mx-auto h-40 w-auto", !reduced && "animate-[uncork_2.2s_var(--ease-in-out-soft)_both]")} animated={!reduced} />
             <p className={cn("mt-6 font-display text-2xl italic animate-fade-in", mutedColor)} style={{ animationDelay: "900ms" }}>
               The cork gives way…
             </p>
@@ -315,7 +315,7 @@ export function GiftPlayer({ gift, preview, startOpen, embedded, banner, classNa
 
         {stage === "keepsake" ? (
           <div className="max-w-md text-center animate-fade-up" key="keepsake">
-            <GlowingBottle className="mx-auto h-32 w-auto" animated={!reduced} />
+            <GlowingBottle festive={gift.occasion === "christmas"} className="mx-auto h-32 w-auto" animated={!reduced} />
             <p className={cn("mt-6 font-display text-2xl leading-snug sm:text-3xl", textColor)}>{gift.story.dedication || `For ${gift.recipientName}. From ${gift.senderName}.`}</p>
             <p className={cn("mt-4 text-sm", mutedColor)}>This message is yours to keep. Come back to it whenever you like.</p>
             <div className="mt-8 flex flex-wrap justify-center gap-3">

@@ -285,3 +285,29 @@ test.describe("commerce (demo checkout)", () => {
     await expect(page.getByText(/RM123456789GB/)).toBeVisible();
   });
 });
+
+test.describe("christmas", () => {
+  test("choosing Christmas defaults to the winter look and a carol with family hints", async ({ page }) => {
+    await page.goto("/create");
+    await choose(page, /^christmas/i);
+    await page.getByRole("button", { name: "Continue" }).click();
+    await expect(page.getByLabel(/their first name/i)).toHaveAttribute("placeholder", /family/i);
+    await page.getByLabel(/their first name/i).fill("Grandma and Grandad");
+    await page.getByLabel(/who they are to you/i).fill("my grandparents");
+    await page.getByLabel(/your name, as you'd sign it/i).fill("The Gallys");
+    await page.getByRole("button", { name: "Continue" }).click();
+    await page.getByLabel("Your message", { exact: true }).fill("Merry Christmas from all of us. We miss your kitchen and your terrible cracker jokes. See you on Boxing Day.");
+    await page.getByRole("button", { name: "Continue" }).click();
+    await expect(page.getByRole("radio", { name: /winter wonderland/i })).toBeChecked();
+    await page.getByRole("button", { name: "Continue" }).click();
+    await expect(page.getByRole("radio", { name: /silent night/i })).toBeChecked();
+    await expect(page.getByRole("radio", { name: /jingle bells/i })).toBeVisible();
+    await expect(page.getByText(/a carol, with words for them/i)).toBeVisible();
+    await page.getByRole("button", { name: "Continue" }).click();
+    await page.getByRole("button", { name: /create my gift/i }).click();
+    await expect(page).toHaveURL(/\/gifts\/[0-9a-f-]+$/, { timeout: 60_000 });
+    await expect(page.getByLabel("Heading").last()).toHaveValue("A carol for you");
+    await expect(page.getByText(/grandma and grandad, you're in our hearts today/i).first()).toBeVisible();
+    await shot(page, "christmas-gift");
+  });
+});

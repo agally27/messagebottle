@@ -6,7 +6,9 @@ A personalised emotional gifting platform. Someone writes a message for a person
 
 ## Status
 
-Functional development build. See [`PROGRESS.md`](PROGRESS.md) for what is implemented and verified, and [`docs/`](docs/) for architecture, decisions, security, AI providers and deployment. No live credentials are configured in this repository; without them the app runs in a clearly labelled demo mode (local data store, procedural art and soundtrack, demo checkout).
+Functional development build. The whole journey — create a gift, generate the story, preview and edit, pay (demo), share a private link, open it as the recipient, order and fulfil a physical bottle — works end to end and is covered by unit tests, Playwright journeys on mobile and desktop, and axe accessibility scans. No live credentials are configured in this repository; without them the app runs in a clearly labelled demo mode (local data store, local story writer, procedural art and soundtrack, demo checkout). Supabase, Stripe and the Anthropic story provider are implemented behind interfaces and await verification against real accounts.
+
+See [`PROGRESS.md`](PROGRESS.md) for what is implemented and verified, and [`docs/`](docs/) for architecture, decisions, security, AI providers and deployment.
 
 ## Quick start
 

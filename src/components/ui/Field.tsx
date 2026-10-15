@@ -1,4 +1,4 @@
-import type { ComponentPropsWithoutRef, ReactNode } from "react";
+import type { ComponentProps, ReactNode } from "react";
 import { cn } from "@/lib/utils/cn";
 
 interface FieldProps {
@@ -45,7 +45,7 @@ export function Field({ id, label, hint, error, optional, children, className, c
 const controlBase =
   "w-full rounded-md border bg-white/70 px-4 text-[0.98rem] text-text placeholder:text-text-faint transition-[border-color,box-shadow] duration-150 focus:bg-white focus:outline-none focus:ring-2 focus:ring-ocean/40 focus:border-ocean disabled:opacity-60";
 
-export function Input({ className, invalid, ...props }: ComponentPropsWithoutRef<"input"> & { invalid?: boolean }) {
+export function Input({ className, invalid, ...props }: ComponentProps<"input"> & { invalid?: boolean }) {
   return (
     <input
       className={cn(controlBase, "h-12", invalid ? "border-danger" : "border-line-strong", className)}
@@ -55,7 +55,7 @@ export function Input({ className, invalid, ...props }: ComponentPropsWithoutRef
   );
 }
 
-export function Textarea({ className, invalid, ...props }: ComponentPropsWithoutRef<"textarea"> & { invalid?: boolean }) {
+export function Textarea({ className, invalid, ...props }: ComponentProps<"textarea"> & { invalid?: boolean }) {
   return (
     <textarea
       className={cn(controlBase, "py-3 leading-relaxed min-h-[8rem] resize-y", invalid ? "border-danger" : "border-line-strong", className)}
@@ -65,7 +65,7 @@ export function Textarea({ className, invalid, ...props }: ComponentPropsWithout
   );
 }
 
-export function Select({ className, invalid, children, ...props }: ComponentPropsWithoutRef<"select"> & { invalid?: boolean }) {
+export function Select({ className, invalid, children, ...props }: ComponentProps<"select"> & { invalid?: boolean }) {
   return (
     <select
       className={cn(controlBase, "h-12 appearance-none bg-[url('data:image/svg+xml;utf8,<svg xmlns=%27http://www.w3.org/2000/svg%27 width=%2716%27 height=%2716%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%235b6578%27 stroke-width=%272%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27><path d=%27m6 9 6 6 6-6%27/></svg>')] bg-no-repeat bg-[right_0.9rem_center] pr-10", invalid ? "border-danger" : "border-line-strong", className)}

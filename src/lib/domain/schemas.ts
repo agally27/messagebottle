@@ -18,7 +18,7 @@ export const LIMITS = {
   datesAndPlaces: 300,
 } as const;
 
-export const giftInputSchema = z.object({
+const giftInputBase = z.object({
   occasion: z.enum(OCCASION_IDS),
   customOccasion: trimmed(LIMITS.customOccasion).default(""),
   recipientName: trimmed(LIMITS.recipientName).min(1, "Tell us their name."),
@@ -35,18 +35,22 @@ export const giftInputSchema = z.object({
   theme: z.enum(THEME_IDS),
   music: z.enum(MUSIC_MOOD_IDS),
   narration: z.boolean().default(false),
-}).superRefine((value, ctx) => {
+});
+
+function requireCustomOccasion(value: { occasion: string; customOccasion: string }, ctx: z.RefinementCtx) {
   if (value.occasion === "other" && value.customOccasion.length === 0) {
     ctx.addIssue({ code: "custom", path: ["customOccasion"], message: "Tell us the occasion." });
   }
-});
+}
+
+export const giftInputSchema = giftInputBase.superRefine(requireCustomOccasion);
 
 export type GiftInputParsed = z.infer<typeof giftInputSchema>;
 
 /** Per-step schemas used by the wizard for inline validation. */
 export const stepSchemas = {
-  occasion: giftInputSchema.pick({ occasion: true, customOccasion: true }),
-  recipient: giftInputSchema.pick({
+  occasion: giftInputBase.pick({ occasion: true, customOccasion: true }).superRefine(requireCustomOccasion),
+  recipient: giftInputBase.pick({
     recipientName: true,
     relationship: true,
     pronouns: true,
@@ -54,9 +58,9 @@ export const stepSchemas = {
     recipientContext: true,
     senderName: true,
   }),
-  message: giftInputSchema.pick({ message: true, memories: true, datesAndPlaces: true, tone: true, transformation: true }),
-  style: giftInputSchema.pick({ theme: true }),
-  sound: giftInputSchema.pick({ music: true, narration: true }),
+  message: giftInputBase.pick({ message: true, memories: true, datesAndPlaces: true, tone: true, transformation: true }),
+  style: giftInputBase.pick({ theme: true }),
+  sound: giftInputBase.pick({ music: true, narration: true }),
 } as const;
 
 /** Sender edits after generation. All optional; validated server-side. */

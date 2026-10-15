@@ -1,8 +1,12 @@
 import { defineConfig, devices } from "@playwright/test";
+import { existsSync } from "node:fs";
 
 const PORT = Number(process.env.E2E_PORT ?? 3100);
 const baseURL = process.env.E2E_BASE_URL ?? `http://127.0.0.1:${PORT}`;
-const chromiumPath = process.env.PLAYWRIGHT_CHROMIUM_PATH;
+// Use an explicitly provided Chromium, or the one pre-installed in Claude's cloud
+// environment; otherwise Playwright's own download is used.
+const preinstalled = "/opt/pw-browsers/chromium";
+const chromiumPath = process.env.PLAYWRIGHT_CHROMIUM_PATH ?? (existsSync(preinstalled) ? preinstalled : undefined);
 
 export default defineConfig({
   testDir: "./e2e",
@@ -18,7 +22,7 @@ export default defineConfig({
     ...(chromiumPath ? { launchOptions: { executablePath: chromiumPath } } : {}),
   },
   projects: [
-    { name: "mobile", use: { ...devices["iPhone 13"], ...(chromiumPath ? { launchOptions: { executablePath: chromiumPath } } : {}) } },
+    { name: "mobile", use: { ...devices["iPhone 13"], browserName: "chromium", ...(chromiumPath ? { launchOptions: { executablePath: chromiumPath } } : {}) } },
     { name: "desktop", use: { ...devices["Desktop Chrome"], ...(chromiumPath ? { launchOptions: { executablePath: chromiumPath } } : {}) } },
   ],
   webServer: process.env.E2E_BASE_URL
@@ -31,6 +35,7 @@ export default defineConfig({
         env: {
           ...process.env,
           DATA_BACKEND: "memory",
+          NEXT_PUBLIC_APP_URL: baseURL,
           DEMO_MODE: "true",
           SESSION_SECRET: process.env.SESSION_SECRET ?? "e2e-only-session-secret-not-for-production-use",
         },

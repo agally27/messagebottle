@@ -1,0 +1,36 @@
+# Decisions
+
+Short records of choices that shape the product. Newest last.
+
+### 1. Build in `agally27/messagebottle`, not the connected `sprint` repo
+The cloud session was attached to `agally27/sprint`, an unrelated productivity app. The brief names the `messagebottle` repository, which existed and was empty. Work went there on the session's branch name (`claude/friendly-hamilton-h5i2xs`), leaving `sprint` untouched.
+
+### 2. Next.js 16 with Cache Components off
+Nearly every route reads a session or the data store, so the classic rendering model (dynamic on `cookies()`/data access, static otherwise) is simpler and lower-risk than Partial Prerendering with Suspense boundaries everywhere. Marketing pages are still fully static.
+
+### 3. A `DataStore` interface with a local implementation first
+Supabase is the production target, but a single-file JSON store lets the whole journey run with zero credentials, keeps tests fast, and forces every caller through one boundary. The Supabase implementation mirrors the interface and ships with SQL migrations and RLS.
+
+### 4. Demo sessions instead of a sign-in wall
+Without Supabase Auth, a signed HMAC cookie creates a guest account the moment someone starts a gift. Ownership checks are identical in both modes. Demo sessions are disabled automatically when Supabase is configured.
+
+### 5. Preview first, pay to send
+Senders create and preview the full gift for free; payment (or demo activation) unlocks the private link. This is the stronger funnel and keeps charges predictable. Generation cost is bounded by a per-sender hourly rate limit and by local providers being the default. A `GENERATION_REQUIRES_PAYMENT`-style gate can be added behind the same service function if margins demand it.
+
+### 6. A faithful local writer as the baseline, not a mock
+The local story writer keeps every sentence the sender wrote, in order, and only adds framing that references supplied facts. It is the no-credential experience, the fallback when a model fails or drifts, and the reference the quality checker measures model output against.
+
+### 7. Procedural scene art and music
+Deterministic SVG scenes (theme × motif × time of day × seed) and a Web Audio soundtrack synthesised from a mood give a complete, consistent, royalty-free experience with nothing to store or pay for. Real image and music providers replace them per scene/asset behind the same interfaces, and the UI always says which is in use.
+
+### 8. Database-backed jobs with leases, run after the response
+No queue service is required: jobs are rows with a lease and a next-run time; `after()` runs them once the response is sent, the status poll re-kicks stale ones, and a secret-protected endpoint supports cron. A queue (e.g. Inngest/QStash) can replace `kickJob` without touching the pipeline.
+
+### 9. Public tokens, never ids
+Recipient links carry a 32-byte base64url token. Internal ids never appear in public URLs or recipient HTML, and gifts of other users return "not found" rather than "forbidden" to avoid probing.
+
+### 10. Prices live in one config file
+`src/lib/config/products.ts` is the only price source; checkout and webhooks recompute totals server-side. Amounts are indicative hypotheses (see docs/PRODUCT.md) until validated.
+
+### 11. Fonts vendored, not fetched
+Fraunces and Manrope (both OFL) are committed as woff2 and loaded with `next/font/local`, so builds never depend on network access to Google Fonts.

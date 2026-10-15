@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Notice } from "@/components/ui/Notice";
 import { SceneArt } from "@/components/art/SceneArt";
+import { GlowingBottle } from "@/components/art/GlowingBottle";
 import { signOutAction } from "@/lib/actions/auth";
 import { requireUserOrRedirect } from "@/lib/auth/guards";
 import { env } from "@/lib/config/env";
@@ -54,8 +55,10 @@ export default async function DashboardPage() {
       ) : null}
 
       {gifts.length === 0 ? (
-        <div className="mt-10 rounded-2xl border border-dashed border-line-strong bg-paper p-10 text-center">
-          <h2 className="text-2xl">Nothing here yet</h2>
+        <div className="relative mt-10 overflow-hidden rounded-2xl border border-line bg-paper p-10 text-center shadow-soft">
+          <div className="pointer-events-none absolute left-1/2 top-0 h-64 w-64 -translate-x-1/2 -translate-y-1/3 rounded-full halo opacity-70 blur-2xl" aria-hidden />
+          <GlowingBottle className="relative mx-auto h-36 w-auto" />
+          <h2 className="relative mt-4 text-2xl">Nothing here yet</h2>
           <p className="mx-auto mt-2 max-w-sm text-text-muted">Your first gift takes about ten minutes. Start with the occasion.</p>
           <div className="mt-6">
             <Button href="/create" size="lg">

@@ -34,3 +34,6 @@ Recipient links carry a 32-byte base64url token. Internal ids never appear in pu
 
 ### 11. Fonts vendored, not fetched
 Fraunces and Manrope (both OFL) are committed as woff2 and loaded with `next/font/local`, so builds never depend on network access to Google Fonts.
+
+### 12. Mood-board crops as placeholder photography
+The founder's mood board set the direction (golden hour, kraft, glowing bottle, handwritten notes). To get the landing page to that standard without a photo shoot, crops of the board are used as product photography in four places, labelled in docs/DESIGN.md as placeholders to replace with real shots. Everything else that looks photographic is drawn: the glowing bottle and scene art are SVG, so they stay crisp and consistent.

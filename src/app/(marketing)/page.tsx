@@ -1,4 +1,6 @@
+import { BrandMoment } from "@/components/marketing/BrandMoment";
 import { Experience } from "@/components/marketing/Experience";
+import { InsideTheBox } from "@/components/marketing/InsideTheBox";
 import { FAQ } from "@/components/marketing/FAQ";
 import { FinalCta } from "@/components/marketing/FinalCta";
 import { Hero } from "@/components/marketing/Hero";
@@ -11,9 +13,11 @@ export default function HomePage() {
     <>
       <Hero />
       <HowItWorks />
+      <InsideTheBox />
       <Experience />
       <Occasions />
       <Products />
+      <BrandMoment />
       <FAQ />
       <FinalCta />
     </>

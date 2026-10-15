@@ -9,6 +9,7 @@ import { DeviceNarrator } from "@/lib/audio/narration";
 import { cn } from "@/lib/utils/cn";
 import { StoryText } from "./StoryText";
 import { BottleMark } from "@/components/ui/Logo";
+import { GlowingBottle } from "@/components/art/GlowingBottle";
 
 type Stage = "closed" | "opening" | "message" | "scene" | "closing" | "keepsake";
 
@@ -209,6 +210,19 @@ export function GiftPlayer({ gift, preview, startOpen, embedded, banner, classNa
         <div className={cn("absolute inset-0", dark ? "bg-gradient-to-t from-black/60 via-black/15 to-black/20" : "bg-gradient-to-t from-white/70 via-white/10 to-white/20")} />
       </div>
 
+      {/* drifting fairy lights */}
+      {dark && !reduced && (stage === "closed" || stage === "opening" || stage === "keepsake") ? (
+        <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
+          {Array.from({ length: 14 }).map((_, i) => (
+            <span
+              key={i}
+              className="absolute bottom-[-4%] block rounded-full bg-glow animate-rise"
+              style={{ left: `${(i * 67) % 100}%`, width: `${3 + (i % 3) * 2}px`, height: `${3 + (i % 3) * 2}px`, animationDelay: `${(i * 1.7) % 14}s`, animationDuration: `${12 + (i % 5) * 2}s`, boxShadow: "0 0 12px 3px rgb(255 217 138 / 0.55)", opacity: 0 }}
+            />
+          ))}
+        </div>
+      ) : null}
+
       {/* Top bar */}
       <div className="relative z-10 flex items-center justify-between gap-3 px-4 pt-4 sm:px-6">
         <div className={cn("flex min-w-0 items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em]", mutedColor)}>
@@ -241,8 +255,11 @@ export function GiftPlayer({ gift, preview, startOpen, embedded, banner, classNa
       {/* Content */}
       <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-5 py-10 sm:px-8" ref={liveRef} tabIndex={-1} aria-live="polite">
         {stage === "closed" ? (
-          <div className={cn("max-w-md rounded-3xl px-6 py-8 text-center backdrop-blur-md animate-fade-up sm:px-10", dark ? "bg-black/30 ring-1 ring-white/10" : "bg-white/55 ring-1 ring-black/5")}>
-            <BottleGlyph className={cn("mx-auto h-28 w-28", !reduced && "animate-float")} color={dark ? theme.palette.paper : theme.palette.ink} accent={theme.palette.accent} />
+          <div className={cn("relative max-w-md rounded-3xl px-6 py-8 text-center backdrop-blur-md animate-fade-up sm:px-10", dark ? "bg-black/30 ring-1 ring-white/10" : "bg-white/55 ring-1 ring-black/5")}>
+            <div className="relative mx-auto h-36 w-36">
+              <div className="absolute inset-0 rounded-full halo blur-md" aria-hidden />
+              <GlowingBottle className={cn("relative mx-auto h-36 w-auto", !reduced && "animate-float")} animated={!reduced} />
+            </div>
             <p className={cn("mt-6 text-xs font-semibold uppercase tracking-[0.2em]", mutedColor)}>For {gift.recipientName}</p>
             <h1 className={cn("mt-3 font-display text-4xl leading-tight sm:text-5xl", textColor)}>Someone has a message for you.</h1>
             <p className={cn("mt-4", mutedColor)}>
@@ -257,7 +274,7 @@ export function GiftPlayer({ gift, preview, startOpen, embedded, banner, classNa
 
         {stage === "opening" ? (
           <div className="text-center" aria-label="Opening">
-            <BottleGlyph className={cn("mx-auto h-32 w-32", !reduced && "animate-[uncork_2.2s_var(--ease-in-out-soft)_both]")} color={dark ? theme.palette.paper : theme.palette.ink} accent={theme.palette.accent} />
+            <GlowingBottle className={cn("mx-auto h-40 w-auto", !reduced && "animate-[uncork_2.2s_var(--ease-in-out-soft)_both]")} animated={!reduced} />
             <p className={cn("mt-6 font-display text-2xl italic animate-fade-in", mutedColor)} style={{ animationDelay: "900ms" }}>
               The cork gives way…
             </p>
@@ -298,7 +315,7 @@ export function GiftPlayer({ gift, preview, startOpen, embedded, banner, classNa
 
         {stage === "keepsake" ? (
           <div className="max-w-md text-center animate-fade-up" key="keepsake">
-            <BottleGlyph className="mx-auto h-24 w-24" color={dark ? theme.palette.paper : theme.palette.ink} accent={theme.palette.accent} />
+            <GlowingBottle className="mx-auto h-32 w-auto" animated={!reduced} />
             <p className={cn("mt-6 font-display text-2xl leading-snug sm:text-3xl", textColor)}>{gift.story.dedication || `For ${gift.recipientName}. From ${gift.senderName}.`}</p>
             <p className={cn("mt-4 text-sm", mutedColor)}>This message is yours to keep. Come back to it whenever you like.</p>
             <div className="mt-8 flex flex-wrap justify-center gap-3">
@@ -356,18 +373,6 @@ function IconButton({ children, label, onClick, dark, pressed }: { children: Rea
     <button type="button" onClick={onClick} aria-label={label} aria-pressed={pressed} title={label} className={cn("flex h-11 w-11 items-center justify-center rounded-full border backdrop-blur transition-colors", dark ? "border-white/25 bg-black/20 text-text-on-dark hover:bg-white/15" : "border-ink/20 bg-white/50 text-ink hover:bg-white/80", pressed && (dark ? "bg-white/25" : "bg-ink/10"))}>
       {children}
     </button>
-  );
-}
-
-function BottleGlyph({ className, color, accent }: { className?: string; color: string; accent: string }) {
-  return (
-    <svg viewBox="0 0 64 96" className={className} aria-hidden>
-      <path d="M24 8h16v8c0 2 .6 3.5 1.8 5C46.5 27 50 33 50 41v41a8 8 0 0 1-8 8H22a8 8 0 0 1-8-8V41c0-8 3.5-14 8.2-20 1.2-1.5 1.8-3 1.8-5z" fill={color} opacity="0.12" stroke={color} strokeWidth="2.2" strokeLinejoin="round" />
-      <rect x="25" y="3" width="14" height="7" rx="1.5" fill={accent} />
-      <rect x="26" y="40" width="12" height="28" rx="2.5" fill={accent} opacity="0.95" transform="rotate(-10 32 54)" />
-      <path d="M20 60c4-3 8-3 12 0s8 3 12 0" stroke={color} strokeWidth="2" fill="none" strokeLinecap="round" opacity=".5" />
-      <path d="M20 70c4-3 8-3 12 0s8 3 12 0" stroke={color} strokeWidth="2" fill="none" strokeLinecap="round" opacity=".3" />
-    </svg>
   );
 }
 

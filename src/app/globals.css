@@ -23,6 +23,12 @@
   --color-seaglass-pale: #dcebe7;
   --color-mist: #eef3f4;
 
+  /* Warm materials (kraft paper, candlelight) */
+  --color-kraft: #e7d6bb;
+  --color-kraft-deep: #c9ad83;
+  --color-amber: #f0b45e;
+  --color-glow: #ffd98a;
+
   /* Accents */
   --color-gold: #c9a961;
   --color-gold-deep: #8a6a1e;
@@ -52,6 +58,7 @@
   /* Type */
   --font-display: var(--font-fraunces), "Iowan Old Style", Georgia, serif;
   --font-sans: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+  --font-hand: var(--font-caveat), "Segoe Script", "Bradley Hand", cursive;
 
   /* Radii */
   --radius-xs: 6px;
@@ -66,6 +73,8 @@
   --shadow-card: 0 1px 1px rgb(20 33 61 / 0.04), 0 12px 32px -16px rgb(20 33 61 / 0.22);
   --shadow-lift: 0 2px 4px rgb(20 33 61 / 0.06), 0 24px 48px -20px rgb(20 33 61 / 0.3);
   --shadow-glow: 0 0 0 1px rgb(201 169 97 / 0.35), 0 10px 40px -10px rgb(201 169 97 / 0.45);
+  --shadow-warm: 0 2px 6px rgb(120 80 20 / 0.08), 0 40px 90px -36px rgb(120 80 20 / 0.5);
+  --shadow-photo: 0 1px 2px rgb(20 33 61 / 0.1), 0 24px 60px -24px rgb(60 40 10 / 0.55);
 
   /* Motion */
   --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
@@ -77,6 +86,9 @@
   --animate-shimmer: shimmer 2.4s linear infinite;
   --animate-drift: drift 18s ease-in-out infinite alternate;
   --animate-pulse-soft: pulse-soft 2.8s ease-in-out infinite;
+  --animate-twinkle: twinkle 3.2s ease-in-out infinite;
+  --animate-rise: rise 14s linear infinite;
+  --animate-sway: sway 9s ease-in-out infinite;
 
   @keyframes fade-up {
     from { opacity: 0; transform: translateY(14px); }
@@ -101,6 +113,38 @@
   @keyframes pulse-soft {
     0%, 100% { opacity: 0.55; }
     50% { opacity: 1; }
+  }
+  @keyframes twinkle {
+    0%, 100% { opacity: 0.45; transform: scale(0.85); }
+    50% { opacity: 1; transform: scale(1.15); }
+  }
+  @keyframes rise {
+    0% { transform: translateY(0) translateX(0); opacity: 0; }
+    10% { opacity: 0.9; }
+    90% { opacity: 0.6; }
+    100% { transform: translateY(-110vh) translateX(18px); opacity: 0; }
+  }
+  @keyframes sway {
+    0%, 100% { transform: rotate(-2.5deg); }
+    50% { transform: rotate(2.5deg); }
+  }
+}
+
+/* Scroll-triggered entrance (see components/ui/Reveal). Reduced motion: always visible. */
+@layer components {
+  .reveal {
+    opacity: 0;
+    transform: translateY(22px);
+    transition: opacity 900ms var(--ease-out-soft), transform 900ms var(--ease-out-soft);
+    transition-delay: var(--reveal-delay, 0ms);
+  }
+  .reveal.reveal-in,
+  .no-js .reveal {
+    opacity: 1;
+    transform: none;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .reveal { opacity: 1; transform: none; transition: none; }
   }
 }
 
@@ -182,6 +226,23 @@
 
 @utility text-balance {
   text-wrap: balance;
+}
+
+@utility font-hand {
+  font-family: var(--font-hand);
+}
+
+/* Kraft paper card: warm tone with a faint fibre texture. */
+@utility kraft {
+  background-color: var(--color-kraft);
+  background-image:
+    repeating-linear-gradient(115deg, rgb(255 255 255 / 0.05) 0 2px, transparent 2px 7px),
+    radial-gradient(ellipse at 30% 20%, rgb(255 255 255 / 0.25), transparent 60%);
+}
+
+/* Warm halo behind glowing objects. */
+@utility halo {
+  background: radial-gradient(closest-side, rgb(255 217 138 / 0.55), rgb(240 180 94 / 0.18) 55%, transparent 75%);
 }
 
 @utility eyebrow {

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { AppShell } from "@/components/site/AppShell";
 import { GenerationProgress } from "@/components/gift/GenerationProgress";
+import { GlowingBottle } from "@/components/art/GlowingBottle";
 import { requireUserOrRedirect } from "@/lib/auth/guards";
 import { getStore } from "@/lib/data";
 import { getGenerationStatus } from "@/lib/gifts/service";
@@ -20,6 +21,10 @@ export default async function GeneratingPage({ params }: PageProps<"/gifts/[id]/
   return (
     <AppShell narrow>
       <div className="text-center">
+        <div className="relative mx-auto mb-2 h-32 w-32">
+          <div className="absolute inset-0 rounded-full halo blur-md" aria-hidden />
+          <GlowingBottle className="relative mx-auto h-32 w-auto animate-float motion-reduce:animate-none" />
+        </div>
         <p className="eyebrow">For {gift.input.recipientName}</p>
         <h1 className="mt-2 text-3xl sm:text-4xl">Making your gift</h1>
         <p className="mt-3 text-text-muted">This usually takes under a minute. You can leave this page; the gift will be waiting in My gifts.</p>

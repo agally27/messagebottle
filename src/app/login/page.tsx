@@ -9,6 +9,7 @@ import { demoAuthEnabled, getCurrentUser } from "@/lib/auth/session";
 import { env } from "@/lib/config/env";
 import { safeNextPath } from "@/lib/utils/redirects";
 import { MagicLinkForm } from "./MagicLinkForm";
+import { GlowingBottle } from "@/components/art/GlowingBottle";
 
 export const metadata: Metadata = { title: "Sign in", robots: { index: false } };
 export const dynamic = "force-dynamic";
@@ -21,7 +22,8 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
   const demo = demoAuthEnabled();
   return (
     <AppShell narrow className="max-w-md" right={<span />}>
-      <p className="eyebrow">Sign in</p>
+      <GlowingBottle className="mx-auto h-28 w-auto" />
+      <p className="mt-2 eyebrow">Sign in</p>
       <h1 className="mt-2 text-3xl">Welcome back</h1>
       {demo ? (
         <>

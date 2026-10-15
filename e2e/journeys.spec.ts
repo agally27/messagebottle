@@ -63,7 +63,7 @@ test.describe("marketing", () => {
     await page.goto("/");
     await expect(page.getByRole("heading", { level: 1 })).toContainText(/feeling/i);
     await expect(page.getByRole("link", { name: "Create your gift" }).first()).toBeVisible();
-    await expect(page.getByRole("link", { name: /open an example/i })).toBeVisible();
+    await expect(page.getByRole("link", { name: /open an example/i }).first()).toBeVisible();
     await expect(page.getByText(/£4\.99/)).toBeVisible();
   });
 

@@ -18,6 +18,13 @@ const manrope = localFont({
   display: "swap",
 });
 
+/** Handwriting accent for small notes ("Someone is thinking of you…"). Never for body text. */
+const caveat = localFont({
+  src: [{ path: "./fonts/caveat-latin-wght-normal.woff2", style: "normal", weight: "400 700" }],
+  variable: "--font-caveat",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
   title: {
@@ -45,7 +52,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en-GB" className={`${fraunces.variable} ${manrope.variable}`}>
+    <html lang="en-GB" className={`${fraunces.variable} ${manrope.variable} ${caveat.variable}`}>
       <body className="min-h-dvh flex flex-col">
         {children}
       </body>

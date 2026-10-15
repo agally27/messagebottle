@@ -114,7 +114,8 @@ export async function signInDemoUser(displayName: string): Promise<UserProfile> 
     id: newId(),
     email: null,
     displayName: displayName || "Guest",
-    isAdmin: false,
+    // Demo mode only: a guest whose name is listed in ADMIN_EMAILS can reach /admin.
+    isAdmin: env.demoMode && env.adminEmails.includes((displayName || "").toLowerCase()),
     kind: "demo",
     createdAt: now,
     updatedAt: now,

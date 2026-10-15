@@ -196,3 +196,83 @@ test.describe("recipient safety", () => {
     await expect(page).toHaveURL(/\/login\?next=%2Fdashboard/);
   });
 });
+
+test.describe("commerce (demo checkout)", () => {
+  test("digital order → demo payment → order paid → link live; physical order fulfilled by admin", async ({ page, browser }) => {
+    await fillWizard(page, { recipient: "Priya", sender: "Sam" });
+    await page.getByRole("button", { name: /create my gift/i }).click();
+    await expect(page).toHaveURL(/\/gifts\/[0-9a-f-]+$/, { timeout: 60_000 });
+    const giftId = page.url().split("/").pop()!;
+
+    // Digital gift through the demo checkout.
+    await page.getByRole("link", { name: /choose a gift & checkout/i }).click();
+    await expect(page).toHaveURL(new RegExp(`/gifts/${giftId}/send`));
+    await page.getByRole("link", { name: "Continue" }).first().click();
+    await expect(page).toHaveURL(new RegExp(`/checkout/${giftId}`));
+    await choose(page, /^digital gift/i);
+    await expect(page.getByText(/total/i).first()).toBeVisible();
+    await page.getByRole("button", { name: /continue \(demo payment\)/i }).click();
+    await expect(page).toHaveURL(/\/checkout\/[0-9a-f-]+\/demo\/[0-9a-f-]+/);
+    await expect(page.getByText(/nothing is charged/i)).toBeVisible();
+    await shot(page, "checkout-demo");
+    await page.getByRole("button", { name: /confirm demo payment of £4\.99/i }).click();
+    await expect(page).toHaveURL(/\/orders\/[0-9a-f-]+/);
+    await expect(page.getByRole("heading", { name: /thank you/i })).toBeVisible();
+    await expect(page.getByText("Paid", { exact: true })).toBeVisible();
+    await expect(page.getByLabel("Private gift link")).toBeVisible();
+    await shot(page, "order-paid");
+
+    // Physical add-on with a UK address.
+    await page.goto(`/checkout/${giftId}?product=little-bottle`);
+    await expect(page.getByRole("radio", { name: /little bottle/i })).toBeChecked();
+    await page.getByRole("button", { name: /continue \(demo payment\)/i }).click();
+    await expect(page.getByRole("alert").first()).toBeVisible(); // address required
+    await page.getByLabel("Name", { exact: true }).fill("Priya S");
+    await page.getByLabel(/address line 1/i).fill("1 Harbour Lane");
+    await page.getByLabel(/town or city/i).fill("Whitby");
+    await page.getByLabel(/postcode/i).fill("yo21 1aa");
+    await page.getByRole("button", { name: /continue \(demo payment\)/i }).click();
+    await page.getByRole("button", { name: /confirm demo payment of £20\.94/i }).click();
+    await expect(page).toHaveURL(/\/orders\/[0-9a-f-]+/);
+    await expect(page.getByText(/we'll start making your keepsake/i)).toBeVisible();
+    const orderUrl = page.url();
+    const orderId = orderUrl.split("/").pop()!;
+
+    // Print-ready insert renders the original message and a QR code.
+    await page.goto(`/gifts/${giftId}/print`);
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+    await expect(page.getByText(/brave one/i)).toBeVisible();
+    await expect(page.getByRole("img", { name: /qr code/i })).toBeVisible();
+    const qr = await page.evaluate(async (id) => (await fetch(`/api/gifts/${id}/qr`)).headers.get("content-type"), giftId);
+    expect(qr).toBe("image/png");
+
+    // A non-admin cannot see the admin area.
+    await page.goto("/admin/orders");
+    await expect(page.getByRole("heading", { name: /drifted away/i })).toBeVisible();
+
+    // An admin (demo: guest named "admin") fulfils the physical order.
+    const adminCtx = await browser.newContext();
+    const ap = await adminCtx.newPage();
+    await ap.goto("/login?next=%2Fadmin%2Forders");
+    await ap.getByLabel(/your name/i).fill("admin");
+    await ap.getByRole("button", { name: /continue as guest/i }).click();
+    await expect(ap).toHaveURL(/\/admin\/orders/);
+    await ap.goto(`/admin/orders/${orderId}`);
+    await expect(ap.getByText(/1 Harbour Lane/)).toBeVisible();
+    await ap.getByLabel("Status", { exact: true }).selectOption("printing");
+    await ap.getByRole("button", { name: "Save" }).click();
+    await expect(ap.getByText(/^Saved\./)).toBeVisible();
+    await ap.getByLabel("Status", { exact: true }).selectOption("dispatched");
+    await ap.getByLabel(/carrier/i).fill("Royal Mail");
+    await ap.getByLabel(/tracking number/i).fill("RM123456789GB");
+    await ap.getByRole("button", { name: "Save" }).click();
+    await expect(ap.getByText(/^Saved\./)).toBeVisible();
+    await shot(ap, "admin-order");
+    await adminCtx.close();
+
+    // The sender sees the dispatch status.
+    await page.goto(orderUrl);
+    await expect(page.getByText(/dispatched with royal mail/i)).toBeVisible();
+    await expect(page.getByText(/RM123456789GB/)).toBeVisible();
+  });
+});

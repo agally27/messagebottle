@@ -37,6 +37,7 @@ export default defineConfig({
           DATA_BACKEND: "memory",
           NEXT_PUBLIC_APP_URL: baseURL,
           DEMO_MODE: "true",
+          ADMIN_EMAILS: "admin",
           SESSION_SECRET: process.env.SESSION_SECRET ?? "e2e-only-session-secret-not-for-production-use",
         },
       },

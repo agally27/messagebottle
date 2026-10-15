@@ -1,5 +1,5 @@
 import "server-only";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { getStore } from "@/lib/data";
 import type { Gift, Order, UserProfile } from "@/lib/domain/types";
 import { getCurrentUser } from "./session";
@@ -27,6 +27,13 @@ export async function requireUser(): Promise<UserProfile> {
 export async function requireAdmin(): Promise<UserProfile> {
   const user = await requireUser();
   if (!user.isAdmin) throw new AuthError(403, "Admin access required.");
+  return user;
+}
+
+/** For admin pages: signed-out users go to login, non-admins see not-found. */
+export async function requireAdminOrNotFound(next: string): Promise<UserProfile> {
+  const user = await requireUserOrRedirect(next);
+  if (!user.isAdmin) notFound();
   return user;
 }
 

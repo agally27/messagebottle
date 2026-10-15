@@ -2,7 +2,7 @@ import "server-only";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { env } from "@/lib/config/env";
 import type { DataStore } from "./store";
-import type { AuditEvent, EmailDelivery, GenerationJob, Gift, JobStatus, Order, OrderStatus, PaymentEvent, UserProfile } from "@/lib/domain/types";
+import type { AuditEvent, EmailDelivery, GenerationJob, Gift, JobStatus, Order, OrderStatus, UserProfile } from "@/lib/domain/types";
 
 /**
  * Supabase (Postgres) store. Uses the server-only secret key: this layer is

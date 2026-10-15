@@ -23,14 +23,14 @@ See `docs/ARCHITECTURE.md` for detail.
 ## Milestones
 | # | Milestone | Status |
 | --- | --- | --- |
-| 0 | Foundation: scaffold, tokens, fonts, config, docs | see PROGRESS.md |
-| 1 | Brand, design system, landing page, navigation, legal pages | |
-| 2 | Gift creation wizard with validation and draft persistence | |
-| 3 | Story model, local story engine, generation jobs, sender preview, recipient reveal, audio | |
-| 4 | Persistence (local + Supabase), auth, ownership, secure links, dashboard, revoke/delete | |
-| 5 | Real AI providers behind interfaces (Anthropic story; image; narration), usage/cost tracking | |
-| 6 | Products, Stripe checkout, webhooks, orders, physical fulfilment, QR, print-ready output, admin | |
-| 7 | Hardening: tests, e2e, security/privacy review, deployment docs, release assessment | |
+| 0 | Foundation: scaffold, tokens, fonts, config, docs | done |
+| 1 | Brand, design system, landing page, navigation, legal pages | done |
+| 2 | Gift creation wizard with validation and draft persistence | done |
+| 3 | Story model, local story engine, generation jobs, sender preview, recipient reveal, audio | done |
+| 4 | Persistence (local + Supabase), auth, ownership, secure links, dashboard, revoke/delete | done locally; Supabase unverified |
+| 5 | Real AI providers behind interfaces (Anthropic story; image; narration), usage/cost tracking | Anthropic story implemented (unverified); image/narration placeholders |
+| 6 | Products, Stripe checkout, webhooks, orders, physical fulfilment, QR, print-ready output, admin | done; Stripe unverified live |
+| 7 | Hardening: tests, e2e, security/privacy review, deployment docs, release assessment | in progress |
 
 ## Definition of done (v1 core)
 Visitor understands the product → starts a gift → enters message, occasion, style → app produces a complete example gift → sender previews → recipient opens via private link on mobile → errors never lose work → private data protected → reproducible build and tests → honest docs for missing live integrations.

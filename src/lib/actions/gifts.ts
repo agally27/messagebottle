@@ -5,7 +5,8 @@ import { revalidatePath } from "next/cache";
 import { AuthError, requireOwnedGift, requireUser } from "@/lib/auth/guards";
 import { demoAuthEnabled, getCurrentUser, signInDemoUser } from "@/lib/auth/session";
 import { formatIssues, giftInputSchema } from "@/lib/domain/schemas";
-import { activateGift, applyGiftSettings, applyStoryEdits, createGift, deleteGift, RateLimitedError, regenerateLink, revokeGift, startGeneration } from "@/lib/gifts/service";
+import { activateGift, applyGiftSettings, applyStoryEdits, createGift, deleteGift, publicGiftUrl, RateLimitedError, regenerateLink, revokeGift, startGeneration } from "@/lib/gifts/service";
+import { getStore } from "@/lib/data";
 import { env } from "@/lib/config/env";
 import { ZodError } from "zod";
 
@@ -113,6 +114,26 @@ export async function regenerateLinkAction(giftId: string): Promise<ActionResult
     await regenerateLink(gift);
     revalidatePath(`/gifts/${giftId}`);
     return { ok: true, data: undefined };
+  } catch (err) {
+    return fail(err);
+  }
+}
+
+/** Emails the private link to the recipient. Only reports success when the provider accepted it. */
+export async function sendGiftEmailAction(giftId: string, input: { to: string; note?: string }): Promise<ActionResult<{ status: string }>> {
+  try {
+    const user = await requireUser();
+    const gift = await requireOwnedGift(giftId, user);
+    if (gift.status !== "active") return { ok: false, error: "Activate the gift before sending it." };
+    const to = String(input.to ?? "").trim().toLowerCase();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) return { ok: false, error: "Enter a valid email address.", fieldErrors: { to: "Enter a valid email address." } };
+    const { emailConfigured, giftLinkEmail, sendEmail } = await import("@/lib/email");
+    if (!emailConfigured()) return { ok: false, error: "Email delivery isn't configured on this deployment. Copy the link and send it yourself." };
+    const limit = await getStore().rateLimit.hit(`email:${user.id}`, 20, 60 * 60 * 1000);
+    if (!limit.allowed) return { ok: false, error: "Too many emails sent in the last hour." };
+    const delivery = await sendEmail(giftLinkEmail({ to, recipientName: gift.input.recipientName, senderName: gift.input.senderName, url: publicGiftUrl(gift), note: input.note?.slice(0, 300), giftId: gift.id }));
+    if (delivery.status !== "sent") return { ok: false, error: "The email couldn't be sent. Copy the link and send it yourself." };
+    return { ok: true, data: { status: delivery.status } };
   } catch (err) {
     return fail(err);
   }

@@ -4,7 +4,8 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Notice } from "@/components/ui/Notice";
-import { activateDemoAction, regenerateLinkAction, revokeGiftAction } from "@/lib/actions/gifts";
+import { activateDemoAction, regenerateLinkAction, revokeGiftAction, sendGiftEmailAction } from "@/lib/actions/gifts";
+import { Field, Input } from "@/components/ui/Field";
 import type { GiftStatus } from "@/lib/domain/types";
 
 interface Props {
@@ -17,9 +18,12 @@ interface Props {
   hasPaidOrder: boolean;
   openCount: number;
   lastOpenedAt: string | null;
+  emailAvailable: boolean;
 }
 
-export function SharePanel({ giftId, status, url, recipientName, demoMode, checkoutAvailable, hasPaidOrder, openCount, lastOpenedAt }: Props) {
+export function SharePanel({ giftId, status, url, recipientName, demoMode, checkoutAvailable, hasPaidOrder, openCount, lastOpenedAt, emailAvailable }: Props) {
+  const [email, setEmail] = useState("");
+  const [emailSent, setEmailSent] = useState(false);
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [notice, setNotice] = useState<{ tone: "success" | "danger" | "info"; text: string } | null>(null);
@@ -57,7 +61,7 @@ export function SharePanel({ giftId, status, url, recipientName, demoMode, check
       <div className="space-y-4">
         <p className="text-text-muted">Happy with the preview? Choose how to send it. The private link only works once the gift is activated.</p>
         <div className="flex flex-col gap-3 sm:flex-row">
-          {checkoutAvailable || !demoMode ? (
+          {checkoutAvailable ? (
             <Button href={`/gifts/${giftId}/send`} size="lg">
               Choose a gift & checkout
             </Button>
@@ -106,12 +110,32 @@ export function SharePanel({ giftId, status, url, recipientName, demoMode, check
           {openCount === 0 ? "Not opened yet." : `Opened ${openCount} ${openCount === 1 ? "time" : "times"}${lastOpenedAt ? `, last on ${new Date(lastOpenedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}` : ""}.`}
           {hasPaidOrder ? " Paid." : demoMode ? " Activated in demo mode." : ""}
         </p>
+        <form
+          className="flex flex-col gap-2 rounded-lg border border-line p-3 sm:flex-row sm:items-end"
+          onSubmit={(e) => {
+            e.preventDefault();
+            run(() => sendGiftEmailAction(giftId, { to: email }), `Sent to ${email}.`);
+            setEmailSent(true);
+          }}
+        >
+          <Field id="share-email" label={emailAvailable ? `Email the link to ${recipientName}` : "Email delivery"} className="flex-1" hint={emailAvailable ? undefined : "Not configured on this deployment — copy the link instead."}>
+            <Input id="share-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="their@email.com" disabled={!emailAvailable} className="h-10" />
+          </Field>
+          <Button type="submit" size="sm" variant="secondary" disabled={!emailAvailable || pending || !email}>
+            {pending && emailSent ? "Sending…" : "Send email"}
+          </Button>
+        </form>
         <div className="flex flex-wrap gap-3">
           <Button href={url} variant="secondary" size="sm" target="_blank" rel="noopener">
             Open as the recipient
           </Button>
-          <Button href={`/gifts/${giftId}/send`} variant="secondary" size="sm">
-            Add a physical bottle
+          {checkoutAvailable ? (
+            <Button href={`/gifts/${giftId}/send`} variant="secondary" size="sm">
+              Add a physical bottle
+            </Button>
+          ) : null}
+          <Button href={`/gifts/${giftId}/print`} variant="secondary" size="sm" target="_blank" rel="noopener">
+            Print message & QR
           </Button>
           {!confirmRevoke ? (
             <Button variant="ghost" size="sm" onClick={() => setConfirmRevoke(true)}>

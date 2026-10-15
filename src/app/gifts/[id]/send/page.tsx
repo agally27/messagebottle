@@ -7,6 +7,7 @@ import { requireUserOrRedirect } from "@/lib/auth/guards";
 import { env } from "@/lib/config/env";
 import { getStore } from "@/lib/data";
 import { formatPrice, listProducts } from "@/lib/config/products";
+import { demoCheckoutAvailable } from "@/lib/payments/checkout";
 
 export const metadata: Metadata = { title: "Send your gift", robots: { index: false } };
 export const dynamic = "force-dynamic";
@@ -32,7 +33,7 @@ export default async function SendPage({ params }: PageProps<"/gifts/[id]/send">
             <p className="mt-4 font-display text-3xl text-ink">{formatPrice(p.priceMinor)}</p>
             {p.requiresShipping ? <p className="text-xs text-text-faint">{p.shippingMinor ? `+ ${formatPrice(p.shippingMinor)} UK delivery` : "UK delivery included"}</p> : null}
             <div className="mt-5 mt-auto pt-4">
-              <Button href={`/checkout/${gift.id}?product=${p.id}`} fullWidth variant={p.id === gift.productId ? "primary" : "secondary"} aria-disabled={!env.stripeConfigured && !env.demoMode}>
+              <Button href={`/checkout/${gift.id}?product=${p.id}`} fullWidth variant={p.id === gift.productId ? "primary" : "secondary"} aria-disabled={!env.stripeConfigured && !demoCheckoutAvailable()}>
                 Continue
               </Button>
             </div>

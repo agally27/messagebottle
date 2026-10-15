@@ -4,7 +4,7 @@ Every creative step sits behind an interface in `src/lib/providers/types.ts`. A 
 
 | Capability | Interface | Default | Real provider | Status |
 | --- | --- | --- | --- | --- |
-| Story text | `StoryProvider.write(brief, input)` | `local` (faithful local writer) | `anthropic` (`ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL`) | **implemented; not tested against the live API** (no key in this environment) |
+| Story text | `StoryProvider.write(brief, input)` | `local` (faithful local writer) | `anthropic` (`ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL`) | **implemented** (`src/lib/providers/story/anthropic.ts`, structured outputs via `zodOutputFormat`, prompt-cached system prompt, error classification); **not tested against the live API** (no key in this environment) |
 | Scene imagery | `ImageProvider.generate(req)` | `procedural` (deterministic SVG scenes) | `openai` (`OPENAI_API_KEY`, `OPENAI_IMAGE_MODEL`) | interface + placeholder; not implemented |
 | Music | `MusicProvider.compose(mood, prompt)` | `procedural` (Web Audio in the recipient's browser) | none yet | demonstration only, labelled in the UI |
 | Narration | `NarrationProvider.narrate(story)` | `none` (device speech synthesis on the client) | `elevenlabs` (`ELEVENLABS_API_KEY`, `ELEVENLABS_VOICE_ID`) | interface + placeholder; not implemented |

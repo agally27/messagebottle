@@ -13,7 +13,7 @@ Nothing has been deployed by the build sessions: their network blocks vercel.com
 
 ## 2. Vercel (about 5 minutes)
 1. **Add New → Project → Import** `agally27/messagebottle`. Framework: Next.js (auto-detected). Root directory: repository root. Build and install commands: defaults (pnpm is detected from `packageManager`).
-2. Production branch = the repository's default branch (currently `claude/friendly-hamilton-h5i2xs`). Rename it to `main` on GitHub whenever convenient; Vercel follows.
+2. Production branch: `main` (make sure it is the repository's default branch under GitHub → Settings → General → Default branch).
 3. **Environment Variables** (Production and Preview):
 
 | Variable | Value |

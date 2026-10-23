@@ -41,7 +41,7 @@ export async function sendEmail(input: SendInput): Promise<EmailDelivery> {
   }
   await store.emails.create(base);
   try {
-    const res = await fetch("https://api.resend.com/emails", {
+    const res = await fetch(`${env.RESEND_API_URL.replace(/\/$/, "")}/emails`, {
       method: "POST",
       headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({ from: env.EMAIL_FROM, to: [input.to], subject: input.subject, text: input.text, html: input.html }),

@@ -29,6 +29,12 @@ Personal messages are intimate. This document states what the code does today an
 - Input limits on every field (zod), no HTML rendering of user text.
 - Security headers in `next.config.ts` (nosniff, referrer policy, frame options, permissions policy).
 
+## Emailing recipients (send now and scheduled delivery)
+- Only paid gifts (Stripe), signed-in accounts, or operators can have us email a recipient; free guest accounts cannot, so the sending domain can't be used for spam. 5 sends and 10 schedule changes per sender per hour.
+- The recipient's address is stored on the delivery row (`scheduled_deliveries`, owner-readable via RLS, written by the server only) and deleted with the gift. It is never logged; logs carry the delivery id and status.
+- A delivery is claimed with a single conditional update before sending, so overlapping cron runs can't email twice. The link is re-checked on the day: revoked, expired or deleted gifts are never sent, and revoking cancels anything scheduled. The email always carries the gift's current link.
+- Note: rows in `email_deliveries` (the send log) keep the recipient address after a gift is deleted (`on delete set null`). Consider deleting those rows with the gift.
+
 ## Photos and song links
 - Uploads are re-encoded server-side with sharp (auto-rotate, max 1600 px, JPEG, all metadata including EXIF/GPS dropped); anything sharp cannot decode is rejected, and SVG or other non-raster types are refused. The browser also shrinks photos before upload (Vercel's ~4.5 MB request limit); the server caps the body at 4.4 MB and 80 uploads per sender per hour, 12 photos per gift.
 - Files live in the private `gift-assets` bucket (or `.data/media` locally) under `gifts/<gift id>/photos/<random id>.jpg`, written and read only with the server key. There are no public or signed storage URLs.

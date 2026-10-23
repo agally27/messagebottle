@@ -2,7 +2,7 @@ import "server-only";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { env } from "@/lib/config/env";
 import type { DataStore } from "./store";
-import type { AuditEvent, EmailDelivery, GenerationJob, Gift, JobStatus, Order, OrderStatus, UserProfile } from "@/lib/domain/types";
+import type { AuditEvent, DeliveryStatus, EmailDelivery, GenerationJob, Gift, JobStatus, Order, OrderStatus, ScheduledDelivery, UserProfile } from "@/lib/domain/types";
 
 /**
  * Supabase (Postgres) store. Uses the server-only secret key: this layer is
@@ -128,6 +128,43 @@ export class SupabaseStore implements DataStore {
     if (j.createdAt !== undefined) r.created_at = j.createdAt;
     if (j.startedAt !== undefined) r.started_at = j.startedAt;
     if (j.finishedAt !== undefined) r.finished_at = j.finishedAt;
+    return r;
+  }
+
+  private static delivery(row: Record<string, unknown>): ScheduledDelivery {
+    return {
+      id: row.id as string,
+      giftId: row.gift_id as string,
+      ownerId: row.owner_id as string,
+      to: row.to_email as string,
+      note: (row.note as string) ?? "",
+      sendOn: row.send_on as string,
+      sendAt: SupabaseStore.iso(row.send_at)!,
+      status: row.status as DeliveryStatus,
+      attempts: (row.attempts as number) ?? 0,
+      lastError: (row.last_error as string | null) ?? null,
+      emailId: (row.email_id as string | null) ?? null,
+      sentAt: SupabaseStore.iso(row.sent_at),
+      createdAt: SupabaseStore.iso(row.created_at)!,
+      updatedAt: SupabaseStore.iso(row.updated_at)!,
+    };
+  }
+
+  private static deliveryRow(d: Partial<ScheduledDelivery>): Record<string, unknown> {
+    const r: Record<string, unknown> = {};
+    if (d.id !== undefined) r.id = d.id;
+    if (d.giftId !== undefined) r.gift_id = d.giftId;
+    if (d.ownerId !== undefined) r.owner_id = d.ownerId;
+    if (d.to !== undefined) r.to_email = d.to;
+    if (d.note !== undefined) r.note = d.note;
+    if (d.sendOn !== undefined) r.send_on = d.sendOn;
+    if (d.sendAt !== undefined) r.send_at = d.sendAt;
+    if (d.status !== undefined) r.status = d.status;
+    if (d.attempts !== undefined) r.attempts = d.attempts;
+    if (d.lastError !== undefined) r.last_error = d.lastError;
+    if (d.emailId !== undefined) r.email_id = d.emailId;
+    if (d.sentAt !== undefined) r.sent_at = d.sentAt;
+    if (d.createdAt !== undefined) r.created_at = d.createdAt;
     return r;
   }
 
@@ -365,6 +402,40 @@ export class SupabaseStore implements DataStore {
       const { data, error } = await this.client.from("audit_events").select("*").order("at", { ascending: false }).limit(limit);
       if (error) this.fail("audit.listRecent", error);
       return (data ?? []).map((r) => ({ id: r.id as string, at: SupabaseStore.iso(r.at)!, actorId: (r.actor_id as string | null) ?? null, action: r.action as string, subjectType: r.subject_type as AuditEvent["subjectType"], subjectId: (r.subject_id as string | null) ?? null, meta: (r.meta as AuditEvent["meta"]) ?? {} }));
+    },
+  };
+
+  deliveries: DataStore["deliveries"] = {
+    create: async (d) => {
+      const { data, error } = await this.client.from("scheduled_deliveries").insert(SupabaseStore.deliveryRow(d)).select("*").single();
+      if (error) this.fail("deliveries.create", error);
+      return SupabaseStore.delivery(data);
+    },
+    get: async (id) => {
+      const { data, error } = await this.client.from("scheduled_deliveries").select("*").eq("id", id).maybeSingle();
+      if (error) this.fail("deliveries.get", error);
+      return data ? SupabaseStore.delivery(data) : null;
+    },
+    listByGift: async (giftId) => {
+      const { data, error } = await this.client.from("scheduled_deliveries").select("*").eq("gift_id", giftId).order("created_at", { ascending: false });
+      if (error) this.fail("deliveries.listByGift", error);
+      return (data ?? []).map(SupabaseStore.delivery);
+    },
+    update: async (id, patch) => {
+      const { data, error } = await this.client.from("scheduled_deliveries").update(SupabaseStore.deliveryRow(patch)).eq("id", id).select("*").maybeSingle();
+      if (error) this.fail("deliveries.update", error);
+      return data ? SupabaseStore.delivery(data) : null;
+    },
+    listDue: async (now, limit) => {
+      const { data, error } = await this.client.from("scheduled_deliveries").select("*").eq("status", "scheduled").lte("send_at", now).order("send_at", { ascending: true }).limit(limit);
+      if (error) this.fail("deliveries.listDue", error);
+      return (data ?? []).map(SupabaseStore.delivery);
+    },
+    claim: async (id, now) => {
+      // A single conditional UPDATE: only one worker can move it out of "scheduled".
+      const { data, error } = await this.client.from("scheduled_deliveries").update({ status: "sending" }).eq("id", id).eq("status", "scheduled").lte("send_at", now).select("*").maybeSingle();
+      if (error) this.fail("deliveries.claim", error);
+      return data ? SupabaseStore.delivery(data) : null;
     },
   };
 

@@ -9,6 +9,7 @@ import { activateGift, applyGiftSettings, applyStoryEdits, createGift, deleteGif
 import { getStore } from "@/lib/data";
 import { demoCheckoutAvailable } from "@/lib/payments/checkout";
 import { ZodError } from "zod";
+import { DeliveryError } from "@/lib/gifts/delivery";
 
 export type ActionResult<T = undefined> = { ok: true; data: T } | { ok: false; error: string; fieldErrors?: Record<string, string> };
 
@@ -16,6 +17,7 @@ function fail(err: unknown): ActionResult<never> {
   if (err instanceof ZodError) return { ok: false, error: "Some details need attention.", fieldErrors: formatIssues(err) };
   if (err instanceof RateLimitedError) return { ok: false, error: `${err.message} (resets ${new Date(err.resetAt).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })})` };
   if (err instanceof AuthError) return { ok: false, error: err.message };
+  if (err instanceof DeliveryError) return { ok: false, error: err.message, ...(err.field ? { fieldErrors: { [err.field]: err.message } } : {}) };
   console.error("[actions] unexpected", err instanceof Error ? err.message : err);
   return { ok: false, error: "Something went wrong. Your details are safe — please try again." };
 }
@@ -127,19 +129,43 @@ export async function sendGiftEmailAction(giftId: string, input: { to: string; n
     const user = await requireUser();
     const gift = await requireOwnedGift(giftId, user);
     if (gift.status !== "active") return { ok: false, error: "Activate the gift before sending it." };
-    const to = String(input.to ?? "").trim().toLowerCase();
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) return { ok: false, error: "Enter a valid email address.", fieldErrors: { to: "Enter a valid email address." } };
+    const { mayEmailRecipient, normaliseEmail } = await import("@/lib/gifts/delivery");
+    const to = normaliseEmail(input.to);
     const { emailConfigured, giftLinkEmail, sendEmail } = await import("@/lib/email");
     if (!emailConfigured()) return { ok: false, error: "Email delivery isn't configured on this deployment. Copy the link and send it yourself." };
-    // Guest accounts are free to create, so only paid gifts (or real accounts) may send email, and only a few per hour.
-    const orders = await getStore().orders.listByGift(gift.id);
-    const paid = orders.some((o) => o.status !== "pending" && o.status !== "cancelled" && o.status !== "refunded" && o.paymentProvider === "stripe");
-    if (!paid && user.kind !== "supabase") return { ok: false, error: "Email delivery is available for paid gifts. Copy the link and send it yourself." };
+    if (!(await mayEmailRecipient(user, gift))) return { ok: false, error: "Email delivery is available for paid gifts. Copy the link and send it yourself." };
     const limit = await getStore().rateLimit.hit(`email:${user.id}`, 5, 60 * 60 * 1000);
     if (!limit.allowed) return { ok: false, error: "Too many emails sent in the last hour." };
     const delivery = await sendEmail(giftLinkEmail({ to, recipientName: gift.input.recipientName, senderName: gift.input.senderName, url: publicGiftUrl(gift), note: input.note?.slice(0, 300), giftId: gift.id }));
     if (delivery.status !== "sent") return { ok: false, error: "The email couldn't be sent. Copy the link and send it yourself." };
     return { ok: true, data: { status: delivery.status } };
+  } catch (err) {
+    return fail(err);
+  }
+}
+
+/** Emails the link to the recipient on the morning of a chosen day (replaces any earlier schedule). */
+export async function scheduleDeliveryAction(giftId: string, input: { to: string; sendOn: string; note?: string }): Promise<ActionResult<{ sendOn: string }>> {
+  try {
+    const user = await requireUser();
+    const gift = await requireOwnedGift(giftId, user);
+    const { scheduleDelivery } = await import("@/lib/gifts/delivery");
+    const d = await scheduleDelivery(user, gift, input);
+    revalidatePath(`/gifts/${giftId}`);
+    return { ok: true, data: { sendOn: d.sendOn } };
+  } catch (err) {
+    return fail(err);
+  }
+}
+
+export async function cancelDeliveryAction(giftId: string, deliveryId: string): Promise<ActionResult> {
+  try {
+    const user = await requireUser();
+    const gift = await requireOwnedGift(giftId, user);
+    const { cancelDelivery } = await import("@/lib/gifts/delivery");
+    await cancelDelivery(user, gift, deliveryId);
+    revalidatePath(`/gifts/${giftId}`);
+    return { ok: true, data: undefined };
   } catch (err) {
     return fail(err);
   }

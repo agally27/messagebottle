@@ -181,7 +181,8 @@ export function writeLocalStory(brief: ContentBrief): StoryDraft {
   const bodySentences = sentences.slice(0, Math.max(0, sentences.length - closingCount));
   let body = bodySentences.length ? bodySentences : sentences;
   // A story needs at least two scenes: split a lone sentence at its natural pauses (words unchanged).
-  if (body.length === 1) {
+  // Not when a memory scene follows, which makes the second scene and would land mid-sentence.
+  if (body.length === 1 && !brief.memorySentences.length) {
     const clauses = body[0]!.split(/(?<=[,;:—–])\s+/u).filter(Boolean);
     if (clauses.length >= 2) body = clauses;
   }

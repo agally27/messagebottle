@@ -22,7 +22,10 @@ export function checkStory(brief: ContentBrief, draft: StoryDraft): QualityRepor
   if (!all.includes(normalise(brief.senderName))) issues.push("sender name missing");
 
   const sentences = brief.sentences.map(normalise).filter((s) => s.length > 3);
-  const present = sentences.filter((s) => all.includes(s)).length;
+  // Headings sit between scenes, so also read the story text continuously: a short
+  // sentence may be split across two scenes at a natural pause.
+  const flowing = normalise([...draft.scenes.map((s) => s.text), draft.closing].join(" "));
+  const present = sentences.filter((s) => all.includes(s) || flowing.includes(s)).length;
   const coverage = sentences.length ? present / sentences.length : 1;
   const required = brief.transformation === "close" ? 0.95 : brief.transformation === "story" ? 0.6 : 0.5;
   if (coverage < required) issues.push(`only ${(coverage * 100).toFixed(0)}% of the sender's sentences were kept (need ${required * 100}%)`);

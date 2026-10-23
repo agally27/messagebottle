@@ -340,6 +340,32 @@ export interface AuditEvent {
   meta: Record<string, string | number | boolean | null>;
 }
 
+/**
+ * The gift link emailed to the recipient on a chosen day. Sent by the daily
+ * delivery run on the morning of `sendAt` (UK time); the link must be live then.
+ */
+export type DeliveryStatus = "scheduled" | "sending" | "sent" | "failed" | "cancelled";
+
+export interface ScheduledDelivery {
+  id: string;
+  giftId: string;
+  ownerId: string;
+  to: string;
+  note: string;
+  /** The day chosen by the sender (YYYY-MM-DD, UK). */
+  sendOn: string;
+  /** When it becomes due (UTC ISO). */
+  sendAt: string;
+  status: DeliveryStatus;
+  attempts: number;
+  /** Short, sender-safe reason; never contains message text. */
+  lastError: string | null;
+  emailId: string | null;
+  sentAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface EmailDelivery {
   id: string;
   giftId: string | null;

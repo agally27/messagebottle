@@ -7,6 +7,7 @@ import type {
   Order,
   OrderStatus,
   PaymentEvent,
+  ScheduledDelivery,
   UserProfile,
 } from "@/lib/domain/types";
 
@@ -78,6 +79,17 @@ export interface DataStore {
     create(delivery: EmailDelivery): Promise<EmailDelivery>;
     update(id: string, patch: Partial<EmailDelivery>): Promise<EmailDelivery | null>;
     listForGift(giftId: string): Promise<EmailDelivery[]>;
+  };
+
+  deliveries: {
+    create(delivery: ScheduledDelivery): Promise<ScheduledDelivery>;
+    get(id: string): Promise<ScheduledDelivery | null>;
+    listByGift(giftId: string): Promise<ScheduledDelivery[]>;
+    update(id: string, patch: Partial<ScheduledDelivery>): Promise<ScheduledDelivery | null>;
+    /** Scheduled deliveries whose time has come, oldest first. */
+    listDue(now: string, limit: number): Promise<ScheduledDelivery[]>;
+    /** Atomically move a due, scheduled delivery to "sending". Null if another worker got it first. */
+    claim(id: string, now: string): Promise<ScheduledDelivery | null>;
   };
 
   rateLimit: {

@@ -13,6 +13,7 @@ import { getStore } from "@/lib/data";
 import { publicGiftUrl } from "@/lib/gifts/service";
 import { orderRef } from "@/lib/orders/service";
 import { demoCheckoutAvailable } from "@/lib/payments/checkout";
+import { deliveryPanelData } from "@/lib/gifts/delivery";
 
 export const metadata: Metadata = { title: "Your order", robots: { index: false } };
 export const dynamic = "force-dynamic";
@@ -35,6 +36,7 @@ export default async function OrderPage({ params }: PageProps<"/orders/[id]">) {
   const order = await store.orders.get(id);
   if (!order || order.ownerId !== user.id) notFound();
   const gift = await store.gifts.get(order.giftId);
+  const delivery = gift ? await deliveryPanelData(user, gift) : null;
   const s = STATUS[order.status] ?? STATUS.pending!;
   const physical = order.shippingAddress !== null;
   return (
@@ -79,7 +81,7 @@ export default async function OrderPage({ params }: PageProps<"/orders/[id]">) {
         <section className="mt-8 rounded-xl border border-line bg-paper p-5">
           <h2 className="text-xl">Share the story</h2>
           <div className="mt-4">
-            <SharePanel giftId={gift.id} status={gift.status} url={publicGiftUrl(gift)} recipientName={gift.input.recipientName} demoMode={demoCheckoutAvailable()} checkoutAvailable={env.stripeConfigured || demoCheckoutAvailable()} physicalAvailable={env.physicalProducts} hasPaidOrder openCount={gift.openCount} lastOpenedAt={gift.lastOpenedAt} emailAvailable={env.emailConfigured} />
+            <SharePanel giftId={gift.id} status={gift.status} url={publicGiftUrl(gift)} recipientName={gift.input.recipientName} demoMode={demoCheckoutAvailable()} checkoutAvailable={env.stripeConfigured || demoCheckoutAvailable()} physicalAvailable={env.physicalProducts} hasPaidOrder openCount={gift.openCount} lastOpenedAt={gift.lastOpenedAt} emailAvailable={env.emailConfigured} delivery={delivery!} />
           </div>
         </section>
       ) : null}

@@ -6,7 +6,7 @@ Nothing has been deployed by the build sessions: their network blocks vercel.com
 
 ## 1. Supabase (about 10 minutes)
 1. Create a project at supabase.com (region: London `eu-west-2` for UK customers).
-2. **SQL Editor → New query**: paste all of `supabase/migrations/0001_init.sql` and run it, then do the same with `0002_photos.sql` (adds the gift photos column). Both are safe to run again. **Existing projects:** run `0002_photos.sql` before deploying the Memory in a Bottle release, or saving gifts will fail. Photos are stored in the private `gift-assets` bucket that 0001 creates.
+2. **SQL Editor → New query**: paste all of `supabase/migrations/0001_init.sql` and run it, then do the same with `0002_photos.sql` (gift photos) and `0003_scheduled_deliveries.sql` (scheduled email delivery), in order. All are safe to run again. **Existing projects:** run each new migration before deploying the release that needs it: `0002` before Memory in a Bottle (or saving gifts fails), `0003` before scheduled delivery (or the gift page fails to load). Photos are stored in the private `gift-assets` bucket that 0001 creates.
 3. **Authentication → URL Configuration**: set **Site URL** to your Vercel URL (e.g. `https://messagebottle.vercel.app`) and add `https://messagebottle.vercel.app/auth/callback` (and `https://*-<your-team>.vercel.app/auth/callback` for previews) to **Redirect URLs**.
 4. **Authentication → Providers → Email**: enabled (magic links). Supabase's built-in email sender is heavily rate-limited (a few emails an hour) — fine for testing; add custom SMTP (e.g. Resend) under **Authentication → Emails → SMTP Settings** before real customers.
 5. **Project Settings → API**: note the project URL, the publishable (anon) key and the secret (service role) key.
@@ -35,7 +35,11 @@ Alternatively install the **Supabase integration** from the Vercel Marketplace: 
 Optional, any time later: `ANTHROPIC_API_KEY` (AI-written stories), `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET` with a webhook to `https://<app>/api/webhooks/stripe` for `checkout.session.completed`, `checkout.session.expired`, `charge.refunded` (then set `DEMO_MODE=false`), `RESEND_API_KEY` + `EMAIL_FROM` (gift emails).
 
 ## Background jobs and crons
-Generation runs right after the request that starts it (`after()`), and the generation screen re-kicks anything stalled. `vercel.json` adds two **daily** crons (job safety net, draft retention sweep), which the Hobby plan allows. On Pro you can make the job cron every few minutes.
+Generation runs right after the request that starts it (`after()`), and the generation screen re-kicks anything stalled. `vercel.json` adds two **daily** crons, which the Hobby plan allows:
+- `/api/jobs/run` at **07:00 UTC**: generation safety net, and **sends scheduled deliveries** due that day. Hobby runs it some time in the 07:00–08:00 UTC hour, so recipients get scheduled emails by 9am UK time all year. On Pro, run it every few minutes and deliveries go out right at 07:00 UTC.
+- `/api/jobs/run?sweep=1` at 03:43 UTC: draft retention sweep.
+
+Scheduled delivery needs email (`RESEND_API_KEY`, `EMAIL_FROM` on a verified domain) and `CRON_SECRET`. Without email, the gift page says email isn't set up and the link can still be copied.
 
 ## Must be true in production
 - Supabase configured. Without it the app falls back to a local file store, which on Vercel is per-instance and loses data. The server logs a warning if this happens.

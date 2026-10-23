@@ -67,6 +67,27 @@ describe.skipIf(!enabled)("SupabaseStore (integration)", () => {
     expect(await store.gifts.get(gift.id)).toBeNull();
   });
 
+  it("schedules deliveries, claims each once, and removes them with the gift", async () => {
+    const now = new Date().toISOString();
+    const gift = await store.gifts.create({ id: randomUUID(), ownerId: a.id, status: "active", input, story: null, audio: [], photos: [], publicToken: `tok_${randomUUID()}`, productId: null, openCount: 0, firstOpenedAt: null, lastOpenedAt: null, activatedAt: now, revokedAt: null, expiresAt: null, createdAt: now, updatedAt: now });
+    created.push(gift.id);
+    const base = { giftId: gift.id, ownerId: a.id, to: "maya@example.test", note: "", status: "scheduled" as const, attempts: 0, lastError: null, emailId: null, sentAt: null, createdAt: now, updatedAt: now };
+    const due = await store.deliveries.create({ ...base, id: randomUUID(), sendOn: "2026-01-02", sendAt: "2026-01-02T07:00:00.000Z" });
+    const later = await store.deliveries.create({ ...base, id: randomUUID(), sendOn: "2099-12-25", sendAt: "2099-12-25T07:00:00.000Z" });
+    expect(due.sendOn).toBe("2026-01-02");
+    const listed = await store.deliveries.listDue(now, 50);
+    expect(listed.some((d) => d.id === due.id)).toBe(true);
+    expect(listed.some((d) => d.id === later.id)).toBe(false);
+    expect((await store.deliveries.claim(later.id, now))).toBeNull(); // not due
+    const [c1, c2] = await Promise.all([store.deliveries.claim(due.id, now), store.deliveries.claim(due.id, now)]);
+    expect([c1, c2].filter(Boolean)).toHaveLength(1);
+    const sent = await store.deliveries.update(due.id, { status: "sent", attempts: 1, sentAt: now, emailId: randomUUID() });
+    expect(sent).toMatchObject({ status: "sent", attempts: 1 });
+    expect((await store.deliveries.listByGift(gift.id)).map((d) => d.id).sort()).toEqual([due.id, later.id].sort());
+    await store.gifts.delete(gift.id);
+    expect(await store.deliveries.get(later.id)).toBeNull(); // cascade
+  });
+
   it("claims jobs atomically and lists due work", async () => {
     const now = new Date().toISOString();
     const gift = await store.gifts.create({ id: randomUUID(), ownerId: a.id, status: "generating", input, story: null, audio: [], publicToken: `tok_${randomUUID()}`, productId: null, openCount: 0, firstOpenedAt: null, lastOpenedAt: null, activatedAt: null, revokedAt: null, expiresAt: null, createdAt: now, updatedAt: now });

@@ -37,10 +37,11 @@ describe("splitSentences", () => {
 
 describe("local story writer", () => {
   it("always makes at least two valid scenes, even from a very short message, without changing its words", () => {
-    for (const message of ["You spilled a drink on my coat in Leeds. I still have the coat.", "Thank you, for everything you did that winter", "Thank you for everything you did that winter"]) {
+    for (const message of ["Happy birthday, Maya. You have always been the brave one, and I am so proud of you.", "You spilled a drink on my coat in Leeds. I still have the coat.", "Thank you, for everything you did that winter", "Thank you for everything you did that winter"]) {
       for (const memories of ["", "The pier."]) {
         const draft = writeLocalStory(buildBrief({ ...base, message, memories }));
         expect(storyDraftSchema.safeParse(draft).success).toBe(true);
+        expect(checkStory(buildBrief({ ...base, message, memories }), draft).issues).toEqual([]); // passes the pipeline's final checks too
         const all = [...draft.scenes.map((s) => s.text), draft.closing].join(" ").replace(/\s+/g, " ");
         for (const word of message.split(" ")) expect(all).toContain(word);
       }

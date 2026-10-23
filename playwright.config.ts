@@ -7,6 +7,8 @@ const baseURL = process.env.E2E_BASE_URL ?? `http://127.0.0.1:${PORT}`;
 // Note: ISR pages (landing, pricing) are prerendered at build time, so they reflect the build's env.
 const DIGITAL_PORT = PORT + 2;
 const digitalURL = `http://127.0.0.1:${DIGITAL_PORT}`;
+// Stand-in for the Resend API so email flows can be checked end to end without sending anything.
+const MOCK_EMAIL_URL = `http://127.0.0.1:${PORT + 99}`;
 // Use an explicitly provided Chromium, or the one pre-installed in Claude's cloud
 // environment; otherwise Playwright's own download is used.
 const preinstalled = "/opt/pw-browsers/chromium";
@@ -34,7 +36,8 @@ export default defineConfig({
   webServer: process.env.E2E_BASE_URL
     ? undefined
     : [
-        { command: `pnpm start -p ${PORT}`, url: baseURL, reuseExistingServer: !process.env.CI, timeout: 120_000, env: serverEnv(baseURL, "on") },
+        { command: `node e2e/mock-resend.mjs ${PORT + 99}`, url: MOCK_EMAIL_URL, reuseExistingServer: !process.env.CI, timeout: 10_000 },
+        { command: `pnpm start -p ${PORT}`, url: baseURL, reuseExistingServer: !process.env.CI, timeout: 120_000, env: { ...serverEnv(baseURL, "on"), RESEND_API_KEY: "re_e2e_key", RESEND_API_URL: MOCK_EMAIL_URL, EMAIL_FROM: "Message in a Bottle <e2e@example.test>" } },
         { command: `pnpm start -p ${DIGITAL_PORT}`, url: digitalURL, reuseExistingServer: !process.env.CI, timeout: 120_000, env: serverEnv(digitalURL, "off") },
       ],
 });

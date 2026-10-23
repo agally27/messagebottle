@@ -4,6 +4,7 @@ import { getProduct } from "@/lib/config/catalogue";
 import { getMusicMood, musicDisclosure } from "@/lib/domain/music";
 import { parseSongLink } from "@/lib/domain/song";
 import { deleteGiftMedia, photosOf } from "./photos";
+import { cancelPendingDeliveries } from "./delivery";
 import { getStore } from "@/lib/data";
 import type { GenerationJob, Gift, GiftInput, PublicGift, Story, UserProfile } from "@/lib/domain/types";
 import { giftInputSchema, giftSettingsEditSchema, storyEditSchema } from "@/lib/domain/schemas";
@@ -174,6 +175,7 @@ export async function activateGift(gift: Gift, reason: "paid" | "demo"): Promise
 
 export async function revokeGift(gift: Gift): Promise<Gift> {
   const updated = await getStore().gifts.update(gift.id, { status: "revoked", revokedAt: nowIso() });
+  await cancelPendingDeliveries(gift.id);
   await audit("gift.revoked", "gift", gift.id, gift.ownerId);
   return updated ?? gift;
 }
@@ -255,6 +257,4 @@ export function toPublicGift(gift: Gift, opts: { preview?: boolean } = {}): Publ
   };
 }
 
-export function publicGiftUrl(gift: Pick<Gift, "publicToken">): string {
-  return `${env.appUrl}/g/${gift.publicToken}`;
-}
+export { publicGiftUrl } from "./links";

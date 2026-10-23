@@ -19,6 +19,7 @@ import { getOccasion } from "@/lib/domain/occasions";
 import { getTheme } from "@/lib/domain/themes";
 import { getGenerationStatus, publicGiftUrl, toPublicGift } from "@/lib/gifts/service";
 import { demoCheckoutAvailable } from "@/lib/payments/checkout";
+import { deliveryPanelData } from "@/lib/gifts/delivery";
 
 export const metadata: Metadata = { title: "Your gift", robots: { index: false } };
 export const dynamic = "force-dynamic";
@@ -63,6 +64,7 @@ export default async function GiftPage({ params }: PageProps<"/gifts/[id]">) {
   }
 
   const publicGift = toPublicGift(gift, { preview: true });
+  const delivery = await deliveryPanelData(user, gift);
 
   return (
     <AppShell className="max-w-6xl">
@@ -107,7 +109,7 @@ export default async function GiftPage({ params }: PageProps<"/gifts/[id]">) {
           <section id="share" aria-labelledby="share-heading" className="rounded-xl border border-line bg-paper p-5 sm:p-6">
             <h2 id="share-heading" className="text-2xl">Send it</h2>
             <div className="mt-4">
-              <SharePanel giftId={gift.id} status={gift.status} url={publicGiftUrl(gift)} recipientName={gift.input.recipientName} demoMode={demoCheckoutAvailable()} checkoutAvailable={env.stripeConfigured || demoCheckoutAvailable()} physicalAvailable={env.physicalProducts} hasPaidOrder={hasPaidOrder} openCount={gift.openCount} lastOpenedAt={gift.lastOpenedAt} emailAvailable={env.emailConfigured} />
+              <SharePanel giftId={gift.id} status={gift.status} url={publicGiftUrl(gift)} recipientName={gift.input.recipientName} demoMode={demoCheckoutAvailable()} checkoutAvailable={env.stripeConfigured || demoCheckoutAvailable()} physicalAvailable={env.physicalProducts} hasPaidOrder={hasPaidOrder} openCount={gift.openCount} lastOpenedAt={gift.lastOpenedAt} emailAvailable={env.emailConfigured} delivery={delivery} />
             </div>
           </section>
 

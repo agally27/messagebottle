@@ -8,8 +8,10 @@ import type {
   Gift,
   Order,
   PaymentEvent,
+  ScheduledDelivery,
   UserProfile,
 } from "@/lib/domain/types";
+import { nowIso } from "@/lib/utils/ids";
 
 interface Db {
   version: 1;
@@ -20,11 +22,12 @@ interface Db {
   payments: Record<string, PaymentEvent>;
   audit: AuditEvent[];
   emails: Record<string, EmailDelivery>;
+  deliveries: Record<string, ScheduledDelivery>;
   rateLimits: Record<string, { count: number; resetAt: number }>;
 }
 
 function emptyDb(): Db {
-  return { version: 1, users: {}, gifts: {}, jobs: {}, orders: {}, payments: {}, audit: [], emails: {}, rateLimits: {} };
+  return { version: 1, users: {}, gifts: {}, jobs: {}, orders: {}, payments: {}, audit: [], emails: {}, deliveries: {}, rateLimits: {} };
 }
 
 const clone = <T>(v: T): T => (v === undefined ? v : (JSON.parse(JSON.stringify(v)) as T));
@@ -150,6 +153,7 @@ export class LocalStore implements DataStore {
       if (!this.db.gifts[id]) return false;
       delete this.db.gifts[id];
       for (const [jid, j] of Object.entries(this.db.jobs)) if (j.giftId === id) delete this.db.jobs[jid];
+      for (const [did, d] of Object.entries(this.db.deliveries)) if (d.giftId === id) delete this.db.deliveries[did];
       this.schedulePersist();
       return true;
     },
@@ -332,6 +336,50 @@ export class LocalStore implements DataStore {
     listForGift: async (giftId) => {
       await this.ensureLoaded();
       return clone(Object.values(this.db.emails).filter((e) => e.giftId === giftId));
+    },
+  };
+
+  deliveries: DataStore["deliveries"] = {
+    create: async (d) => {
+      await this.ensureLoaded();
+      this.db.deliveries[d.id] = clone(d);
+      this.schedulePersist();
+      return clone(d);
+    },
+    get: async (id) => {
+      await this.ensureLoaded();
+      return clone(this.db.deliveries[id] ?? null);
+    },
+    listByGift: async (giftId) => {
+      await this.ensureLoaded();
+      return clone(Object.values(this.db.deliveries).filter((d) => d.giftId === giftId).sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
+    },
+    update: async (id, patch) => {
+      await this.ensureLoaded();
+      const current = this.db.deliveries[id];
+      if (!current) return null;
+      const next = { ...current, ...clone(patch), id, updatedAt: nowIso() };
+      this.db.deliveries[id] = next;
+      this.schedulePersist();
+      return clone(next);
+    },
+    listDue: async (now, limit) => {
+      await this.ensureLoaded();
+      return clone(
+        Object.values(this.db.deliveries)
+          .filter((d) => d.status === "scheduled" && d.sendAt <= now)
+          .sort((a, b) => a.sendAt.localeCompare(b.sendAt))
+          .slice(0, limit),
+      );
+    },
+    claim: async (id, now) => {
+      await this.ensureLoaded();
+      const d = this.db.deliveries[id];
+      if (!d || d.status !== "scheduled" || d.sendAt > now) return null;
+      d.status = "sending";
+      d.updatedAt = now;
+      this.schedulePersist();
+      return clone(d);
     },
   };
 

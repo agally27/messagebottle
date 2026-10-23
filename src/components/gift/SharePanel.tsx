@@ -4,8 +4,8 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Notice } from "@/components/ui/Notice";
-import { activateDemoAction, regenerateLinkAction, revokeGiftAction, sendGiftEmailAction } from "@/lib/actions/gifts";
-import { Field, Input } from "@/components/ui/Field";
+import { activateDemoAction, regenerateLinkAction, revokeGiftAction } from "@/lib/actions/gifts";
+import { DeliveryPanel, type DeliverySummary } from "./DeliveryPanel";
 import type { GiftStatus } from "@/lib/domain/types";
 
 interface Props {
@@ -22,11 +22,10 @@ interface Props {
   openCount: number;
   lastOpenedAt: string | null;
   emailAvailable: boolean;
+  delivery: { canEmail: boolean; deliveries: DeliverySummary[]; window: { min: string; max: string } };
 }
 
-export function SharePanel({ giftId, status, url, recipientName, demoMode, checkoutAvailable, physicalAvailable, hasPaidOrder, openCount, lastOpenedAt, emailAvailable }: Props) {
-  const [email, setEmail] = useState("");
-  const [emailSent, setEmailSent] = useState(false);
+export function SharePanel({ giftId, status, url, recipientName, demoMode, checkoutAvailable, physicalAvailable, hasPaidOrder, openCount, lastOpenedAt, emailAvailable, delivery }: Props) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [notice, setNotice] = useState<{ tone: "success" | "danger" | "info"; text: string } | null>(null);
@@ -113,21 +112,7 @@ export function SharePanel({ giftId, status, url, recipientName, demoMode, check
           {openCount === 0 ? "Not opened yet." : `Opened ${openCount} ${openCount === 1 ? "time" : "times"}${lastOpenedAt ? `, last on ${new Date(lastOpenedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}` : ""}.`}
           {hasPaidOrder ? " Paid." : demoMode ? " Activated in demo mode." : ""}
         </p>
-        <form
-          className="flex flex-col gap-2 rounded-lg border border-line p-3 sm:flex-row sm:items-end"
-          onSubmit={(e) => {
-            e.preventDefault();
-            run(() => sendGiftEmailAction(giftId, { to: email }), `Sent to ${email}.`);
-            setEmailSent(true);
-          }}
-        >
-          <Field id="share-email" label={emailAvailable ? `Email the link to ${recipientName}` : "Email delivery"} className="flex-1" hint={emailAvailable ? undefined : "Not configured on this deployment — copy the link instead."}>
-            <Input id="share-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="their@email.com" disabled={!emailAvailable} className="h-10" />
-          </Field>
-          <Button type="submit" size="sm" variant="secondary" disabled={!emailAvailable || pending || !email}>
-            {pending && emailSent ? "Sending…" : "Send email"}
-          </Button>
-        </form>
+        <DeliveryPanel giftId={giftId} recipientName={recipientName} emailAvailable={emailAvailable} canEmail={delivery.canEmail} deliveries={delivery.deliveries} window={delivery.window} />
         <div className="flex flex-wrap gap-3">
           <Button href={url} variant="secondary" size="sm" target="_blank" rel="noopener">
             Open as the recipient

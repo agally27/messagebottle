@@ -42,6 +42,8 @@ const schema = z.object({
   NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: z.string().min(1).optional(),
 
   RESEND_API_KEY: z.string().min(1).optional(),
+  // Override only to point tests at a local stand-in.
+  RESEND_API_URL: z.string().url().default("https://api.resend.com"),
   EMAIL_FROM: z.string().default("Message in a Bottle <hello@example.com>"),
 
   ADMIN_EMAILS: z.string().default(""),

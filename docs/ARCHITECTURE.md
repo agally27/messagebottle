@@ -62,6 +62,9 @@ The generation screen polls `/api/gifts/[id]/job`; the poll also re-kicks stale 
 
 `GiftPlayer` (client) renders stages: closed → opening → message → scenes → photos (if any) → song (if linked) → closing → keepsake. Photos come from the token route for recipients and the owner route in the sender's preview; a song's official embed is mounted only after a tap, and pauses the procedural music. Audio starts only after the "Open the bottle" tap. Music is synthesised in the browser from the mood (or played from a stored URL when a music provider exists). Narration uses a stored asset when present, otherwise the device's speech synthesis; text is always visible. Reduced-motion preferences shorten or remove animation.
 
+## Scheduled delivery
+`src/lib/gifts/delivery.ts`. The sender picks a UK day (tomorrow to a year ahead); the row's `sendAt` is 07:00 UTC that day. `/api/jobs/run` (daily cron) calls `processDueDeliveries`: list due → claim each atomically (`scheduled` → `sending`) → re-check the gift is live → send through the email provider (one immediate retry) → `sent` or `failed` with a sender-safe reason. One pending delivery per gift; a new date replaces it. Revoking the link cancels pending deliveries.
+
 ## Catalogue
 `src/lib/config/products.ts` holds the product data and pure helpers (safe for client code). What can be sold right now is decided server-side in `src/lib/config/catalogue.ts`: availability, the seasonal window, and the `PHYSICAL_PRODUCTS` switch. Pricing (`priceOrder`), gift creation and every product list go through it; client components receive the sellable list as props.
 

@@ -120,6 +120,9 @@ test.describe("sender journey", () => {
     // Activate in demo mode and grab the private link.
     await page.getByRole("button", { name: /activate link/i }).click();
     await expect(page.getByText(/your gift is live/i)).toBeVisible({ timeout: 15_000 });
+    // Guests (free accounts) can't have us email people until the gift is paid for.
+    await expect(page.getByText(/email delivery is available once the gift is paid for/i)).toBeVisible();
+    await expect(page.getByLabel("Their email address")).toBeDisabled();
     const fullLink = await page.getByLabel("Private gift link").inputValue();
     expect(fullLink).toMatch(/\/g\/[A-Za-z0-9_-]{40,}$/);
     // The link carries the public origin (NEXT_PUBLIC_APP_URL); test against this server.
@@ -413,3 +416,65 @@ test.describe("memory in a bottle", () => {
 /** 64×48 solid-colour PNGs. */
 const PNG_RED = "iVBORw0KGgoAAAANSUhEUgAAAEAAAAAwCAIAAAAuKetIAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAAfUlEQVRoge2SwQ0AQRCCrI73lU1ZV4aZrAkFgDF+nCZ1AxdAfUV3Ie6SuoELoL6iuxB3Sd3ABVBf0V2Iu6Ru4AKor+guxF1SN3AB1Fd0F+IuqRu4AOorugtxl9QNXAD1Fd2FuEvqBi6A+oruQtwldQMXQH1FdyHukrqBjwf8Yk9o8Z5sqscAAAAASUVORK5CYII=";
 const PNG_BLUE = "iVBORw0KGgoAAAANSUhEUgAAAEAAAAAwCAIAAAAuKetIAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAAfUlEQVRoge2SAQkAURSDls5MF9FYF2M8/sAAOhY+T5O6AQuwviK7kHdJ3YAFWF+RXci7pG7AAqyvyC7kXVI3YAHWV2QX8i6pG7AA6yuyC3mX1A1YgPUV2YW8S+oGLMD6iuxC3iV1AxZgfUV2Ie+SugELsL4iu5B3Sd2AxwN+LpxJD8Olc9oAAAAASUVORK5CYII=";
+
+test.describe("scheduled delivery", () => {
+  const MOCK = `http://127.0.0.1:${Number(process.env.E2E_PORT ?? 3100) + 99}`;
+
+  test("schedule the link for a day, cancel it, then send now: the email carries the live link", async ({ page, browser, request }) => {
+    // An operator account may email recipients without a Stripe payment (demo mode has none).
+    await page.goto("/login?next=%2Fcreate");
+    await page.getByLabel(/your name/i).fill("Ops");
+    await page.getByText("Operator sign-in").click();
+    await page.getByLabel(/demo admin secret/i).fill("e2e-demo-admin-secret");
+    await page.getByRole("button", { name: /continue as guest/i }).click();
+    await fillWizard(page, { recipient: "Ivy", sender: "Ops" });
+    await page.getByRole("button", { name: /create my gift/i }).click();
+    await expect(page).toHaveURL(/\/gifts\/[0-9a-f-]+$/, { timeout: 60_000 });
+    await page.getByRole("button", { name: /activate link/i }).click();
+    await expect(page.getByText(/your gift is live/i)).toBeVisible({ timeout: 15_000 });
+    const link = new URL(await page.getByLabel("Private gift link").inputValue()).pathname;
+
+    const to = `ivy-${test.info().project.name}@example.test`;
+    await page.getByLabel("Their email address").fill(to);
+    await page.getByLabel(/a line for the email/i).fill("Happy birthday from all of us");
+    await page.getByRole("radio", { name: /on a date/i }).locator("xpath=ancestor::label[1]").click();
+    const day = page.getByLabel("Day", { exact: true });
+    const min = await day.getAttribute("min");
+    expect(min).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    await page.getByRole("button", { name: /^schedule for/i }).click();
+    const scheduled = page.getByTestId("scheduled-delivery");
+    await expect(scheduled).toContainText(/scheduled: arrives .+, by 9am uk time/i);
+    await expect(scheduled).toContainText(to);
+    await shot(page, "delivery-scheduled");
+
+    // A date in the past is refused by the server, not just the date picker.
+    await page.getByLabel("Their email address").fill(to);
+    await page.getByRole("radio", { name: /on a date/i }).locator("xpath=ancestor::label[1]").click();
+    await day.fill("2020-01-01");
+    await page.getByRole("button", { name: /^schedule for/i }).click();
+    await expect(page.getByText(/choose tomorrow or later/i).first()).toBeVisible();
+
+    await scheduled.getByRole("button", { name: "Cancel" }).click();
+    await expect(page.getByText(/scheduled email cancelled/i)).toBeVisible();
+    await expect(page.getByTestId("scheduled-delivery")).toHaveCount(0);
+
+    // Send now: the stand-in email service receives the live link.
+    await page.getByRole("radio", { name: /send now/i }).locator("xpath=ancestor::label[1]").click();
+    await page.getByLabel("Their email address").fill(to);
+    await page.getByRole("button", { name: "Send now" }).click();
+    await expect(page.getByText(`Sent to ${to}.`).first()).toBeVisible();
+    const emails = (await (await request.get(`${MOCK}/__emails`)).json()) as Array<{ to: string[]; subject: string; html: string }>;
+    const mine = emails.filter((e) => e.to.includes(to));
+    expect(mine).toHaveLength(1); // the cancelled schedule sent nothing
+    expect(mine[0]!.subject).toBe("Ops has a message for you");
+    const href = mine[0]!.html.match(/href="([^"]+\/g\/[^"]+)"/)?.[1];
+    expect(new URL(href!).pathname).toBe(link);
+
+    const ctx = await browser.newContext();
+    const rp = await ctx.newPage();
+    await rp.goto(new URL(href!).pathname);
+    await expect(rp.getByRole("heading", { name: /someone has a message for you/i })).toBeVisible();
+    await ctx.close();
+  });
+});
+

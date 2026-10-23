@@ -46,6 +46,9 @@ The physical Christmas Bottle is only sold inside its window (`season` in `src/l
 
 Before selling: source the scented paper or fragrance from a supplier who provides UK CLP / allergen information, label the packaging accordingly, and keep an unscented option. Confirm last posting dates with the carrier each year; the site deliberately makes no delivery-by-Christmas promise.
 
+## Sending
+From the gift page, once the link is live: copy or share the link, print it as a QR code, or **email it** to the recipient, either now or **on a chosen day** (a birthday, an anniversary, Christmas morning). Scheduled emails arrive that morning, by 9am UK time. The sender sees what's scheduled, can cancel or change the day, and sees when it was sent or why it couldn't be. Email needs a paid gift or a signed-in account.
+
 ## Memory in a Bottle
 For gifts made of shared history: two people who met years ago, a friendship, a family, or someone who has died. Any gift can carry:
 - **Photos** — up to 12, each with an optional caption and year. Photos with years show as a then-and-now timeline in the story ("Moments worth keeping"). They are re-encoded on upload (resized, metadata including location removed) and shown only through the gift's private link.

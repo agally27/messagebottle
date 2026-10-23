@@ -14,6 +14,7 @@ import { publicGiftUrl } from "@/lib/gifts/service";
 import { orderRef } from "@/lib/orders/service";
 import { demoCheckoutAvailable } from "@/lib/payments/checkout";
 import { deliveryPanelData } from "@/lib/gifts/delivery";
+import { openNoticePanel } from "@/lib/gifts/notifications";
 
 export const metadata: Metadata = { title: "Your order", robots: { index: false } };
 export const dynamic = "force-dynamic";
@@ -81,7 +82,7 @@ export default async function OrderPage({ params }: PageProps<"/orders/[id]">) {
         <section className="mt-8 rounded-xl border border-line bg-paper p-5">
           <h2 className="text-xl">Share the story</h2>
           <div className="mt-4">
-            <SharePanel giftId={gift.id} status={gift.status} url={publicGiftUrl(gift)} recipientName={gift.input.recipientName} demoMode={demoCheckoutAvailable()} checkoutAvailable={env.stripeConfigured || demoCheckoutAvailable()} physicalAvailable={env.physicalProducts} hasPaidOrder openCount={gift.openCount} lastOpenedAt={gift.lastOpenedAt} emailAvailable={env.emailConfigured} delivery={delivery!} />
+            <SharePanel giftId={gift.id} status={gift.status} url={publicGiftUrl(gift)} recipientName={gift.input.recipientName} demoMode={demoCheckoutAvailable()} checkoutAvailable={env.stripeConfigured || demoCheckoutAvailable()} physicalAvailable={env.physicalProducts} hasPaidOrder openCount={gift.openCount} lastOpenedAt={gift.lastOpenedAt} emailAvailable={env.emailConfigured} delivery={delivery!} openNotice={openNoticePanel(user, gift)} />
           </div>
         </section>
       ) : null}

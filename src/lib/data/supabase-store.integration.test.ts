@@ -62,6 +62,11 @@ describe.skipIf(!enabled)("SupabaseStore (integration)", () => {
     await store.gifts.recordOpen(gift.id, now);
     await store.gifts.recordOpen(gift.id, now);
     expect((await store.gifts.get(gift.id))?.openCount).toBe(2);
+    expect((await store.gifts.get(gift.id))?.notifyOnOpen).toBe(true); // 0004 default
+    const claims = await Promise.all([store.gifts.claimOpenNotification(gift.id, now), store.gifts.claimOpenNotification(gift.id, now)]);
+    expect(claims.filter(Boolean)).toHaveLength(1);
+    expect(await store.gifts.claimOpenNotification(gift.id, now)).toBe(false);
+    expect((await store.gifts.update(gift.id, { notifyOnOpen: false }))?.notifyOnOpen).toBe(false);
     expect((await store.gifts.listAbandoned(new Date(Date.now() + 60_000).toISOString(), 500)).some((g) => g.id === gift.id)).toBe(true);
     expect(await store.gifts.delete(gift.id)).toBe(true);
     expect(await store.gifts.get(gift.id)).toBeNull();

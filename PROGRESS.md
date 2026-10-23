@@ -21,7 +21,7 @@ Functional development build. In demo mode (no credentials) the complete journey
 | --- | --- | --- |
 | Types | `pnpm typecheck` | pass |
 | Lint | `pnpm lint` | pass, 0 warnings |
-| Unit | `pnpm test` | 71 tests pass (5 Supabase integration tests skipped without a database; run with `pnpm test:supabase`). Original 34 covered (story writer, quality, pipeline retries/failures/idempotency/rate limit, regeneration and deletion guards, public projection, retention sweep, safe redirects, ownership, pricing, webhook idempotency/retry/mismatch, refunds, fulfilment transitions) |
+| Unit | `pnpm test` | 77 tests pass (5 Supabase integration tests skipped without a database; run with `pnpm test:supabase`). Original 34 covered (story writer, quality, pipeline retries/failures/idempotency/rate limit, regeneration and deletion guards, public projection, retention sweep, safe redirects, ownership, pricing, webhook idempotency/retry/mismatch, refunds, fulfilment transitions) |
 | Build | `pnpm build` | pass |
 | E2E | `pnpm test:e2e` | 40 pass (12 journeys + 7 axe scans, × mobile + desktop, plus 2 digital-only journeys on a server with physical products off), adding scheduled delivery, Christmas, memory and remembrance journeys to the original set: landing, example reveal, full sender journey incl. stranger access 404 and revoke, draft persistence, invalid links, auth redirect, open-redirect refusal, demo checkout (digital + physical with address validation), print page + QR, non-admin blocked, admin fulfilment to dispatched; axe WCAG A/AA with no serious/critical violations on landing, pricing, wizard, login, support, example (closed and opened) |
 | Security review | adversarial read of auth, actions, routes, payments, RLS | 1 high, 7 medium, 7 low findings — all fixed (see docs/SECURITY.md review log) |
@@ -55,6 +55,13 @@ Functional development build. In demo mode (no credentials) the complete journey
 - Verified: 7 unit tests (UK date window and 07:00 UTC due time across BST/GMT, validation, sender eligibility, send on the day with the live link and note, never twice incl. overlapping runs, retry then failure, revoke/expiry/cancel, delete cascade); Supabase integration test against Postgres with 0003 applied (due listing, concurrent claim gives one winner, cascade); Playwright journey with a local stand-in for the Resend API: operator schedules, sees it, past date refused by the server, cancels, sends now, the received email links to the live gift and opens it; guests see email is for paid gifts.
 - **Unverified:** Vercel's cron actually firing at 07:00 UTC on the deployed project, and real Resend delivery (needs `RESEND_API_KEY` and a verified sending domain).
 - **Action for the deployed project:** run `supabase/migrations/0003_scheduled_deliveries.sql` before deploying this release.
+
+## Opened notification
+- The sender is emailed the first time the recipient opens the gift (recipient name and UK time, link to the gift page; no message text, no private link). On by default, a per-gift checkbox on the gift and order pages; hidden for guest accounts without an address or when email isn't configured. Sent after the response (`after()`), at most once per gift via a conditional update on `gifts.open_notified_at` (migration `0004_open_notifications.sql`).
+- The sender's own views of the link (signed in, e.g. "Open as the recipient") no longer count as opens, so the count and the email reflect the recipient. Gifts opened before this release don't get a late "first open" email.
+- Verified: 6 unit tests (once only incl. two simultaneous first opens, no message text or token in the email, owner views not counted, turned off, no address, legacy opened gifts, revoked links); Supabase integration test (default on, concurrent claim gives one winner); Playwright: the sender opening their own link leaves "Not opened yet.", the recipient's open shows "Opened 1 time".
+- **Unverified:** the email arriving through real Resend.
+- **Action for the deployed project:** run `supabase/migrations/0004_open_notifications.sql` before deploying this release.
 
 ## Deployment readiness (Vercel + Supabase)
 - Deploy guide: docs/DEPLOYMENT.md. **Not deployed yet**: the build environment cannot reach vercel.com or supabase.com.

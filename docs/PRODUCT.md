@@ -49,6 +49,8 @@ Before selling: source the scented paper or fragrance from a supplier who provid
 ## Sending
 From the gift page, once the link is live: copy or share the link, print it as a QR code, or **email it** to the recipient, either now or **on a chosen day** (a birthday, an anniversary, Christmas morning). Scheduled emails arrive that morning, by 9am UK time. The sender sees what's scheduled, can cancel or change the day, and sees when it was sent or why it couldn't be. Email needs a paid gift or a signed-in account.
 
+Senders with an email address get an email the first time the recipient opens the gift ("Maya opened your message", with the time). It's on by default and can be turned off per gift; it never includes the message. The sender's own views of the link don't count as opens.
+
 ## Memory in a Bottle
 For gifts made of shared history: two people who met years ago, a friendship, a family, or someone who has died. Any gift can carry:
 - **Photos** — up to 12, each with an optional caption and year. Photos with years show as a then-and-now timeline in the story ("Moments worth keeping"). They are re-encoded on upload (resized, metadata including location removed) and shown only through the gift's private link.

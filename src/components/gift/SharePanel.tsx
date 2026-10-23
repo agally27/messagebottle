@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Notice } from "@/components/ui/Notice";
-import { activateDemoAction, regenerateLinkAction, revokeGiftAction } from "@/lib/actions/gifts";
+import { activateDemoAction, regenerateLinkAction, revokeGiftAction, setOpenNotificationAction } from "@/lib/actions/gifts";
 import { DeliveryPanel, type DeliverySummary } from "./DeliveryPanel";
 import type { GiftStatus } from "@/lib/domain/types";
 
@@ -23,9 +23,11 @@ interface Props {
   lastOpenedAt: string | null;
   emailAvailable: boolean;
   delivery: { canEmail: boolean; deliveries: DeliverySummary[]; window: { min: string; max: string } };
+  /** "Email me when it's opened": null when unavailable (no email provider, or a guest account without an address). */
+  openNotice: { email: string; on: boolean; sentAt: string | null } | null;
 }
 
-export function SharePanel({ giftId, status, url, recipientName, demoMode, checkoutAvailable, physicalAvailable, hasPaidOrder, openCount, lastOpenedAt, emailAvailable, delivery }: Props) {
+export function SharePanel({ giftId, status, url, recipientName, demoMode, checkoutAvailable, physicalAvailable, hasPaidOrder, openCount, lastOpenedAt, emailAvailable, delivery, openNotice }: Props) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [notice, setNotice] = useState<{ tone: "success" | "danger" | "info"; text: string } | null>(null);
@@ -112,6 +114,19 @@ export function SharePanel({ giftId, status, url, recipientName, demoMode, check
           {openCount === 0 ? "Not opened yet." : `Opened ${openCount} ${openCount === 1 ? "time" : "times"}${lastOpenedAt ? `, last on ${new Date(lastOpenedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}` : ""}.`}
           {hasPaidOrder ? " Paid." : demoMode ? " Activated in demo mode." : ""}
         </p>
+        {openNotice ? (
+          openNotice.sentAt ? (
+            <p className="text-sm text-text-muted">We emailed you when {recipientName} first opened it.</p>
+          ) : (
+            <label className="flex items-start gap-3 text-sm text-ink">
+              <input type="checkbox" checked={openNotice.on} disabled={pending} onChange={(e) => run(() => setOpenNotificationAction(giftId, e.target.checked), e.target.checked ? "We'll email you when it's opened." : "Opened emails turned off.")} className="mt-0.5 h-5 w-5 shrink-0 accent-ink" />
+              <span>
+                Email me when {recipientName} first opens it
+                <span className="block text-xs text-text-muted">To {openNotice.email}. Your own views of the link don&apos;t count.</span>
+              </span>
+            </label>
+          )
+        ) : null}
         <DeliveryPanel giftId={giftId} recipientName={recipientName} emailAvailable={emailAvailable} canEmail={delivery.canEmail} deliveries={delivery.deliveries} window={delivery.window} />
         <div className="flex flex-wrap gap-3">
           <Button href={url} variant="secondary" size="sm" target="_blank" rel="noopener">

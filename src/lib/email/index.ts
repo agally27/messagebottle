@@ -73,6 +73,15 @@ export function giftLinkEmail(opts: { to: string; recipientName: string; senderN
   return { to: opts.to, subject, text, html, template: "gift-link", giftId: opts.giftId };
 }
 
+/** Tells the sender their gift was opened. Never includes the message itself. */
+export function giftOpenedEmail(opts: { to: string; recipientName: string; openedAt: string; giftUrl: string; giftId: string }): SendInput {
+  const when = new Date(opts.openedAt).toLocaleString("en-GB", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit", timeZone: "Europe/London" });
+  const subject = `${opts.recipientName} opened your message`;
+  const text = [`${opts.recipientName} opened the gift you made for them, on ${when} (UK time).`, "", `See your gift: ${opts.giftUrl}`, "", "You're getting this because the gift is set to tell you when it's opened. You can turn that off on the gift page."].join("\n");
+  const html = `<div style="font-family:Georgia,serif;max-width:520px;margin:0 auto;padding:32px 24px;color:#1c2333;background:#fbf8f1"><p style="font-size:14px;letter-spacing:.14em;text-transform:uppercase;color:#3e7f86">The bottle has been opened</p><h1 style="font-weight:400;font-size:28px;margin:8px 0 16px">${escapeHtml(opts.recipientName)} opened your message.</h1><p style="font-size:16px;line-height:1.6;color:#5b6578">${escapeHtml(when)}, UK time.</p><p style="margin:28px 0"><a href="${escapeHtml(opts.giftUrl)}" style="display:inline-block;background:#14213d;color:#f4efe4;text-decoration:none;padding:14px 24px;border-radius:999px;font-family:sans-serif;font-weight:600">See your gift</a></p><p style="font-size:12px;color:#8b94a5;margin-top:32px">You're getting this because the gift is set to tell you when it's opened. You can turn that off on the gift page.</p></div>`;
+  return { to: opts.to, subject, text, html, template: "gift-opened", giftId: opts.giftId };
+}
+
 export function orderConfirmationEmail(opts: { to: string; orderRef: string; items: string[]; totalText: string; physical: boolean; orderId: string; giftId: string }): SendInput {
   const subject = `Your Message in a Bottle order ${opts.orderRef}`;
   const text = [`Thank you for your order ${opts.orderRef}.`, "", ...opts.items.map((i) => `• ${i}`), "", `Total: ${opts.totalText}`, "", opts.physical ? "We'll email you again when your keepsake is dispatched." : "Your private link is live — share it from My gifts.", ""].join("\n");

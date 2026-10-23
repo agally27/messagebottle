@@ -136,6 +136,10 @@ export interface Gift {
   openCount: number;
   firstOpenedAt: string | null;
   lastOpenedAt: string | null;
+  /** Email the sender when the recipient first opens it. Absent on older gifts; treat as true. */
+  notifyOnOpen?: boolean;
+  /** Set once, when the "opened" email is claimed, so it is only ever sent once. */
+  openNotifiedAt?: string | null;
   activatedAt: string | null;
   revokedAt: string | null;
   expiresAt: string | null;

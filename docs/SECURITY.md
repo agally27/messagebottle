@@ -33,6 +33,7 @@ Personal messages are intimate. This document states what the code does today an
 - Only paid gifts (Stripe), signed-in accounts, or operators can have us email a recipient; free guest accounts cannot, so the sending domain can't be used for spam. 5 sends and 10 schedule changes per sender per hour.
 - The recipient's address is stored on the delivery row (`scheduled_deliveries`, owner-readable via RLS, written by the server only) and deleted with the gift. It is never logged; logs carry the delivery id and status.
 - A delivery is claimed with a single conditional update before sending, so overlapping cron runs can't email twice. The link is re-checked on the day: revoked, expired or deleted gifts are never sent, and revoking cancels anything scheduled. The email always carries the gift's current link.
+- "Opened" emails go only to the gift's owner, at their account address, at most once per gift (claimed with a conditional update on `gifts.open_notified_at`), and never contain the message or the private link; they link to the owner's gift page. The sender's own views of the link (signed in) are not counted as opens.
 - Note: rows in `email_deliveries` (the send log) keep the recipient address after a gift is deleted (`on delete set null`). Consider deleting those rows with the gift.
 
 ## Photos and song links

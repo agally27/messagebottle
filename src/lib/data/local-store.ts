@@ -166,6 +166,14 @@ export class LocalStore implements DataStore {
       g.lastOpenedAt = at;
       this.schedulePersist();
     },
+    claimOpenNotification: async (id, at) => {
+      await this.ensureLoaded();
+      const g = this.db.gifts[id];
+      if (!g || g.openNotifiedAt) return false;
+      g.openNotifiedAt = at;
+      this.schedulePersist();
+      return true;
+    },
     listAbandoned: async (beforeIso, limit) => {
       await this.ensureLoaded();
       return clone(

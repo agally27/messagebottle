@@ -208,3 +208,16 @@ export async function removePhotoAction(giftId: string, photoId: string): Promis
     return fail(err);
   }
 }
+
+/** Turns the "email me when it's opened" notice on or off for one gift. */
+export async function setOpenNotificationAction(giftId: string, on: boolean): Promise<ActionResult> {
+  try {
+    const user = await requireUser();
+    const gift = await requireOwnedGift(giftId, user);
+    await getStore().gifts.update(gift.id, { notifyOnOpen: Boolean(on) });
+    revalidatePath(`/gifts/${giftId}`);
+    return { ok: true, data: undefined };
+  } catch (err) {
+    return fail(err);
+  }
+}

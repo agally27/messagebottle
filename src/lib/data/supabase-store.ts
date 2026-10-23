@@ -56,6 +56,8 @@ export class SupabaseStore implements DataStore {
       productId: (row.product_id as string | null) ?? null,
       openCount: (row.open_count as number) ?? 0,
       firstOpenedAt: SupabaseStore.iso(row.first_opened_at),
+      notifyOnOpen: row.notify_on_open === undefined || row.notify_on_open === null ? true : Boolean(row.notify_on_open),
+      openNotifiedAt: SupabaseStore.iso(row.open_notified_at),
       lastOpenedAt: SupabaseStore.iso(row.last_opened_at),
       activatedAt: SupabaseStore.iso(row.activated_at),
       revokedAt: SupabaseStore.iso(row.revoked_at),
@@ -78,6 +80,8 @@ export class SupabaseStore implements DataStore {
     if (g.productId !== undefined) r.product_id = g.productId;
     if (g.openCount !== undefined) r.open_count = g.openCount;
     if (g.firstOpenedAt !== undefined) r.first_opened_at = g.firstOpenedAt;
+    if (g.notifyOnOpen !== undefined) r.notify_on_open = g.notifyOnOpen;
+    if (g.openNotifiedAt !== undefined) r.open_notified_at = g.openNotifiedAt;
     if (g.lastOpenedAt !== undefined) r.last_opened_at = g.lastOpenedAt;
     if (g.activatedAt !== undefined) r.activated_at = g.activatedAt;
     if (g.revokedAt !== undefined) r.revoked_at = g.revokedAt;
@@ -271,6 +275,12 @@ export class SupabaseStore implements DataStore {
     recordOpen: async (id, at) => {
       const { error } = await this.client.rpc("record_gift_open", { p_gift_id: id, p_at: at });
       if (error) console.warn("[supabase] gifts.recordOpen failed", error.message);
+    },
+    claimOpenNotification: async (id, at) => {
+      // Conditional UPDATE: only the first request finds open_notified_at still null.
+      const { data, error } = await this.client.from("gifts").update({ open_notified_at: at }).eq("id", id).is("open_notified_at", null).select("id").maybeSingle();
+      if (error) this.fail("gifts.claimOpenNotification", error);
+      return Boolean(data);
     },
     listAbandoned: async (beforeIso, limit) => {
       const { data, error } = await this.client.from("gifts").select("*").in("status", ["draft", "failed"]).lt("updated_at", beforeIso).order("updated_at", { ascending: true }).limit(limit);

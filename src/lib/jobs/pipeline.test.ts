@@ -159,7 +159,7 @@ describe("public access", () => {
     expect(JSON.stringify(pub)).not.toContain(user.id);
     expect(JSON.stringify(pub)).not.toContain(gift.id);
     const { recordGiftOpen } = await import("@/lib/gifts/service");
-    expect(await recordGiftOpen(ready.publicToken)).toBe(true);
+    expect((await recordGiftOpen(ready.publicToken)).counted).toBe(true);
     expect((await getStore().gifts.get(gift.id))?.openCount).toBe(1);
     await revokeGift(ready);
     expect(await getPublicGift(ready.publicToken)).toBeNull();

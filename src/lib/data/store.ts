@@ -33,6 +33,8 @@ export interface DataStore {
     update(id: string, patch: Partial<Gift>): Promise<Gift | null>;
     delete(id: string): Promise<boolean>;
     recordOpen(id: string, at: string): Promise<void>;
+    /** Atomically mark the "opened" email as sent. True only for the first caller. */
+    claimOpenNotification(id: string, at: string): Promise<boolean>;
     /** Drafts and failed gifts not touched since `beforeIso` (retention sweep). */
     listAbandoned(beforeIso: string, limit: number): Promise<Gift[]>;
   };

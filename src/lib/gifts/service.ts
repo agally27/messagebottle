@@ -211,13 +211,21 @@ export async function getPublicGift(token: string): Promise<PublicGift | null> {
 }
 
 /** Counts an open when the recipient taps "Open the bottle" (not on page load, so link previews don't count). */
-export async function recordGiftOpen(token: string): Promise<boolean> {
-  if (!isPlausibleToken(token)) return false;
+/**
+ * Records that the recipient opened the gift. The sender's own views (e.g.
+ * "Open as the recipient" while signed in) are not counted. `firstOpen` is
+ * true when this is the first time it was opened.
+ */
+export async function recordGiftOpen(token: string, opts: { viewerId?: string | null } = {}): Promise<{ counted: boolean; firstOpen: boolean; gift: Gift | null; at: string }> {
+  const at = nowIso();
+  const none = { counted: false, firstOpen: false, gift: null, at };
+  if (!isPlausibleToken(token)) return none;
   const store = getStore();
   const gift = await store.gifts.getByPublicToken(token);
-  if (!gift || gift.status !== "active") return false;
-  await store.gifts.recordOpen(gift.id, nowIso());
-  return true;
+  if (!gift || gift.status !== "active") return none;
+  if (opts.viewerId && opts.viewerId === gift.ownerId) return { ...none, gift };
+  await store.gifts.recordOpen(gift.id, at);
+  return { counted: true, firstOpen: !gift.firstOpenedAt, gift, at };
 }
 
 /**

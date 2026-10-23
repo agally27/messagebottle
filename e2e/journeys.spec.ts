@@ -129,6 +129,15 @@ test.describe("sender journey", () => {
     const link = new URL(fullLink).pathname;
     await shot(page, "gift-active");
 
+    // The sender's own look at the link isn't counted as an open.
+    const own = await page.context().newPage();
+    await own.goto(link);
+    await own.getByRole("button", { name: /open the bottle/i }).click();
+    await expect(own.getByRole("button", { name: "Next" })).toBeVisible({ timeout: 10_000 });
+    await own.close();
+    await page.reload();
+    await expect(page.getByText("Not opened yet.")).toBeVisible();
+
     // A recipient with no session opens the link and reads the story.
     const recipient = await browser.newContext();
     const rp = await recipient.newPage();
@@ -147,6 +156,8 @@ test.describe("sender journey", () => {
     expect(html).not.toContain("ownerId");
     expect(html).not.toContain("/gifts/");
     await recipient.close();
+    await page.reload();
+    await expect(page.getByText(/^Opened 1 time/)).toBeVisible();
 
     // Another signed-in user cannot open the sender's gift page.
     const stranger = await browser.newContext();

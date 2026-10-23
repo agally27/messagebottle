@@ -4,8 +4,10 @@ import { SceneArt } from "@/components/art/SceneArt";
 import { PhoneMockup } from "./PhoneMockup";
 import { Reveal } from "@/components/ui/Reveal";
 import heroPhoto from "@/assets/brand/hero-bottle-box.jpg";
+import { physicalProductsEnabled } from "@/lib/config/catalogue";
 
 export function Hero() {
+  const physical = physicalProductsEnabled();
   return (
     <section className="relative overflow-hidden paper-texture">
       {/* warm light */}
@@ -14,12 +16,14 @@ export function Hero() {
 
       <div className="container-page relative grid items-center gap-12 py-14 sm:py-20 lg:grid-cols-[0.95fr_1.05fr] lg:gap-10 lg:py-24">
         <div className="max-w-xl animate-fade-up">
-          <p className="eyebrow">Personalised digital gifts · Keepsake bottles</p>
+          <p className="eyebrow">{physical ? "Personalised digital gifts · Keepsake bottles" : "Personalised digital gifts"}</p>
           <h1 className="mt-4 text-[2.7rem] leading-[1.0] sm:text-6xl lg:text-[4.6rem]">
             A feeling, <span className="italic font-light text-ocean">in a bottle.</span>
           </h1>
           <p className="mt-6 text-lg leading-relaxed text-text-muted sm:text-xl">
-            Write a message to someone you love. We turn it into a personalised, illustrated story with music they can open anywhere — and, if you like, a real glass bottle, glowing with your words inside.
+            {physical
+              ? "Write a message to someone you love. We turn it into a personalised, illustrated story with music they can open anywhere — and, if you like, a real glass bottle, glowing with your words inside."
+              : "Write a message to someone you love. We turn it into a personalised, illustrated story with music, sent by private link and opened like a message in a bottle, on any phone."}
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
             <Button href="/create" size="lg" variant="gold" className="shadow-warm">
@@ -69,7 +73,7 @@ export function Hero() {
 
       <Reveal className="container-page relative pb-10 pt-12 lg:pt-14">
         <ul className="grid grid-cols-2 gap-x-6 gap-y-7 border-t border-line pt-8 sm:grid-cols-3 lg:grid-cols-5">
-          {FEATURES.map((f) => (
+          {(physical ? PHYSICAL_FEATURES : DIGITAL_FEATURES).map((f) => (
             <li key={f.title} className="flex gap-3">
               <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gold-pale text-[#6d5620]">{f.icon}</span>
               <span>
@@ -84,12 +88,20 @@ export function Hero() {
   );
 }
 
-const FEATURES = [
+const PHYSICAL_FEATURES = [
   { title: "A physical keepsake", body: "A real glass bottle with your message rolled inside.", icon: <BottleIcon /> },
   { title: "A personalised story", body: "Illustrated and made just for them.", icon: <BookIcon /> },
   { title: "A soundtrack to match", body: "Music chosen for the mood of your words.", icon: <NoteIcon /> },
   { title: "A heartfelt message", body: "Your words, kept exactly as you wrote them.", icon: <HeartIcon /> },
   { title: "Delivered to their door", body: "Or sent in seconds by private link.", icon: <ParcelIcon /> },
+];
+
+const DIGITAL_FEATURES = [
+  { title: "A bottle that opens", body: "It glows and uncorks on their screen.", icon: <BottleIcon /> },
+  { title: "A personalised story", body: "Illustrated and made just for them.", icon: <BookIcon /> },
+  { title: "A soundtrack to match", body: "Music for the mood, or your own song.", icon: <NoteIcon /> },
+  { title: "A heartfelt message", body: "Your words, kept exactly as you wrote them.", icon: <HeartIcon /> },
+  { title: "Sent in seconds", body: "By private link, email or QR code.", icon: <ParcelIcon /> },
 ];
 
 function Dot() {

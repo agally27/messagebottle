@@ -25,6 +25,7 @@ Nothing has been deployed by the build sessions: their network blocks vercel.com
 | `CRON_SECRET` | `openssl rand -hex 32` (also used as `JOBS_SECRET`) |
 | `ADMIN_EMAILS` | your email, for `/admin` |
 | `DEMO_MODE` | `true` while Stripe is not configured (labelled demo checkout); `false` once it is |
+| `PHYSICAL_PRODUCTS` | leave unset (or `off`) to sell only the digital gift; `on` once keepsake bottles can be made and posted. Redeploy after changing it. |
 | `NEXT_PUBLIC_APP_URL` | optional; defaults to the Vercel production domain. Set it when you add a custom domain. |
 
 Alternatively install the **Supabase integration** from the Vercel Marketplace: it sets `NEXT_PUBLIC_SUPABASE_ANON_KEY` and `SUPABASE_SERVICE_ROLE_KEY`, which the app also accepts.

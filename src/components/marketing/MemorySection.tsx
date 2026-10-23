@@ -1,7 +1,8 @@
 import { Button } from "@/components/ui/Button";
 import { Reveal } from "@/components/ui/Reveal";
 import { SceneArt } from "@/components/art/SceneArt";
-import { formatPrice, getProduct } from "@/lib/config/products";
+import { formatPrice } from "@/lib/config/products";
+import { getProduct } from "@/lib/config/catalogue";
 import type { SceneArtSpec } from "@/lib/domain/types";
 
 const USES = [
@@ -82,7 +83,11 @@ export function MemorySection() {
             <p className="mt-5 text-sm text-text-muted">
               Memory Bottle <span className="font-display text-lg text-ink">{formatPrice(product.priceMinor)}</span> + {formatPrice(product.shippingMinor)} UK delivery: your message and three mini photo prints, tied with twine. Or send it digitally from {formatPrice(getProduct("digital")?.priceMinor ?? 0)}.
             </p>
-          ) : null}
+          ) : (
+            <p className="mt-5 text-sm text-text-muted">
+              Free to make and preview. <span className="font-display text-lg text-ink">{formatPrice(getProduct("digital")?.priceMinor ?? 499)}</span> to send, photos and song included.
+            </p>
+          )}
           <p className="mt-3 text-xs text-text-faint">Photos stay private to the gift: location data is removed, and only someone with the private link can see them.</p>
         </Reveal>
       </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import type { Product } from "@/lib/domain/types";
 
 /**
  * The wizard restores its draft from localStorage, so it renders on the
@@ -21,6 +22,6 @@ const CreateWizard = dynamic(() => import("./CreateWizard").then((m) => m.Create
   ),
 });
 
-export function WizardLoader(props: { demoMode: boolean; signedIn: boolean; requiresSignIn: boolean }) {
+export function WizardLoader(props: { demoMode: boolean; signedIn: boolean; requiresSignIn: boolean; products: Product[] }) {
   return <CreateWizard {...props} />;
 }

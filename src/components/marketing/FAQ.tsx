@@ -1,3 +1,5 @@
+import { physicalProductsEnabled } from "@/lib/config/catalogue";
+
 const FAQS = [
   {
     q: "What does the recipient actually get?",
@@ -10,10 +12,22 @@ const FAQS = [
   {
     q: "Can I see it before I pay?",
     a: "Yes. You create and preview the complete gift first. Payment only unlocks sending the private link (and, if you choose, the physical bottle).",
+    physical: true,
+  },
+  {
+    q: "Can I see it before I pay?",
+    a: "Yes. You create and preview the complete gift first. Payment only unlocks sending the private link.",
+    physical: false,
   },
   {
     q: "What's inside the physical bottle?",
     a: "A glass keepsake bottle with your message printed on quality paper, rolled and tied, a ribbon seal and a small card with a QR code that opens the digital story. It arrives in protective gift packaging.",
+    physical: true,
+  },
+  {
+    q: "Can I send a real bottle?",
+    a: "Not yet. Keepsake bottles with your message rolled inside are coming soon. For now you can print the gift's QR code on a card of your own.",
+    physical: false,
   },
   {
     q: "How private is this?",
@@ -25,11 +39,13 @@ const FAQS = [
   },
   {
     q: "What music is used?",
-    a: "You choose a mood, and the soundtrack is created for your gift. Where a generated track isn't available yet, we use a clearly labelled demonstration soundtrack rather than any copyrighted song.",
+    a: "You choose a mood, and a soundtrack plays in the browser to match it; for Christmas, a traditional carol. You can also link a song from Spotify, Apple Music or YouTube, which plays through that service's own player when they tap play.",
   },
 ] as const;
 
 export function FAQ() {
+  const physical = physicalProductsEnabled();
+  const faqs = FAQS.filter((f) => !("physical" in f) || f.physical === physical);
   return (
     <section id="faq" className="scroll-mt-20 border-t border-line bg-paper py-16 sm:py-24">
       <div className="container-page grid gap-10 lg:grid-cols-[0.8fr_1.2fr]">
@@ -39,7 +55,7 @@ export function FAQ() {
           <p className="mt-4 text-text-muted">Anything else? <a href="/support" className="font-semibold text-ocean underline-offset-4 hover:underline">Get in touch</a>.</p>
         </div>
         <div className="divide-y divide-line rounded-xl border border-line bg-cream">
-          {FAQS.map((f) => (
+          {faqs.map((f) => (
             <details key={f.q} className="group px-5 py-4 open:bg-paper first:rounded-t-xl last:rounded-b-xl">
               <summary className="flex cursor-pointer list-none items-center justify-between gap-4 py-1 text-[1.02rem] font-semibold text-ink marker:content-none [&::-webkit-details-marker]:hidden">
                 {f.q}

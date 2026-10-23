@@ -14,6 +14,6 @@ export default defineConfig({
     include: ["src/**/*.test.ts"],
     environment: "node",
     clearMocks: true,
-    env: { NODE_ENV: "test", DEMO_STEP_DELAY_MS: "0", DATA_BACKEND: "memory", SESSION_SECRET: "test-secret-test-secret-test-secret" },
+    env: { NODE_ENV: "test", DEMO_STEP_DELAY_MS: "0", DATA_BACKEND: "memory", SESSION_SECRET: "test-secret-test-secret-test-secret", PHYSICAL_PRODUCTS: "on" },
   },
 });

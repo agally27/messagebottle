@@ -16,13 +16,15 @@ interface Props {
   /** True only when demo checkout is available (DEMO_MODE and no Stripe keys). */
   demoMode: boolean;
   checkoutAvailable: boolean;
+  /** Physical keepsakes are on sale (PHYSICAL_PRODUCTS=on). */
+  physicalAvailable: boolean;
   hasPaidOrder: boolean;
   openCount: number;
   lastOpenedAt: string | null;
   emailAvailable: boolean;
 }
 
-export function SharePanel({ giftId, status, url, recipientName, demoMode, checkoutAvailable, hasPaidOrder, openCount, lastOpenedAt, emailAvailable }: Props) {
+export function SharePanel({ giftId, status, url, recipientName, demoMode, checkoutAvailable, physicalAvailable, hasPaidOrder, openCount, lastOpenedAt, emailAvailable }: Props) {
   const [email, setEmail] = useState("");
   const [emailSent, setEmailSent] = useState(false);
   const router = useRouter();
@@ -63,8 +65,8 @@ export function SharePanel({ giftId, status, url, recipientName, demoMode, check
         <p className="text-text-muted">Happy with the preview? Choose how to send it. The private link only works once the gift is activated.</p>
         <div className="flex flex-col gap-3 sm:flex-row">
           {checkoutAvailable ? (
-            <Button href={`/gifts/${giftId}/send`} size="lg">
-              Choose a gift & checkout
+            <Button href={physicalAvailable ? `/gifts/${giftId}/send` : `/checkout/${giftId}?product=digital`} size="lg">
+              {physicalAvailable ? "Choose a gift & checkout" : "Continue to checkout"}
             </Button>
           ) : null}
           {demoMode ? (
@@ -130,7 +132,7 @@ export function SharePanel({ giftId, status, url, recipientName, demoMode, check
           <Button href={url} variant="secondary" size="sm" target="_blank" rel="noopener">
             Open as the recipient
           </Button>
-          {checkoutAvailable ? (
+          {checkoutAvailable && physicalAvailable ? (
             <Button href={`/gifts/${giftId}/send`} variant="secondary" size="sm">
               Add a physical bottle
             </Button>

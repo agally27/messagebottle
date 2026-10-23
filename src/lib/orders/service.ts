@@ -1,5 +1,6 @@
 import "server-only";
-import { describeOptions, formatPrice, priceOrder } from "@/lib/config/products";
+import { describeOptions, formatPrice } from "@/lib/config/products";
+import { priceOrder } from "@/lib/config/catalogue";
 import { getStore } from "@/lib/data";
 import type { Fulfilment, Gift, Order, OrderStatus, PaymentEvent, ShippingAddress, UserProfile } from "@/lib/domain/types";
 import { shippingAddressSchema } from "@/lib/domain/schemas";

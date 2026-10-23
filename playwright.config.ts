@@ -3,6 +3,10 @@ import { existsSync } from "node:fs";
 
 const PORT = Number(process.env.E2E_PORT ?? 3100);
 const baseURL = process.env.E2E_BASE_URL ?? `http://127.0.0.1:${PORT}`;
+// A second server from the same build with physical products switched off (the production default).
+// Note: ISR pages (landing, pricing) are prerendered at build time, so they reflect the build's env.
+const DIGITAL_PORT = PORT + 2;
+const digitalURL = `http://127.0.0.1:${DIGITAL_PORT}`;
 // Use an explicitly provided Chromium, or the one pre-installed in Claude's cloud
 // environment; otherwise Playwright's own download is used.
 const preinstalled = "/opt/pw-browsers/chromium";
@@ -22,23 +26,27 @@ export default defineConfig({
     ...(chromiumPath ? { launchOptions: { executablePath: chromiumPath } } : {}),
   },
   projects: [
-    { name: "mobile", use: { ...devices["iPhone 13"], browserName: "chromium", ...(chromiumPath ? { launchOptions: { executablePath: chromiumPath } } : {}) } },
-    { name: "desktop", use: { ...devices["Desktop Chrome"], ...(chromiumPath ? { launchOptions: { executablePath: chromiumPath } } : {}) } },
+    // Needs the second local server, so it only runs when Playwright starts the servers itself.
+    ...(process.env.E2E_BASE_URL ? [] : [{ name: "digital-only", testMatch: /digital-only\.spec\.ts/, use: { ...devices["Desktop Chrome"], baseURL: digitalURL, ...(chromiumPath ? { launchOptions: { executablePath: chromiumPath } } : {}) } }]),
+    { name: "mobile", testIgnore: /digital-only\.spec\.ts/, use: { ...devices["iPhone 13"], browserName: "chromium", ...(chromiumPath ? { launchOptions: { executablePath: chromiumPath } } : {}) } },
+    { name: "desktop", testIgnore: /digital-only\.spec\.ts/, use: { ...devices["Desktop Chrome"], ...(chromiumPath ? { launchOptions: { executablePath: chromiumPath } } : {}) } },
   ],
   webServer: process.env.E2E_BASE_URL
     ? undefined
-    : {
-        command: `pnpm start -p ${PORT}`,
-        url: baseURL,
-        reuseExistingServer: !process.env.CI,
-        timeout: 120_000,
-        env: {
-          ...process.env,
-          DATA_BACKEND: "memory",
-          NEXT_PUBLIC_APP_URL: baseURL,
-          DEMO_MODE: "true",
-          DEMO_ADMIN_SECRET: "e2e-demo-admin-secret",
-          SESSION_SECRET: process.env.SESSION_SECRET ?? "e2e-only-session-secret-not-for-production-use",
-        },
-      },
+    : [
+        { command: `pnpm start -p ${PORT}`, url: baseURL, reuseExistingServer: !process.env.CI, timeout: 120_000, env: serverEnv(baseURL, "on") },
+        { command: `pnpm start -p ${DIGITAL_PORT}`, url: digitalURL, reuseExistingServer: !process.env.CI, timeout: 120_000, env: serverEnv(digitalURL, "off") },
+      ],
 });
+
+function serverEnv(url: string, physical: "on" | "off"): Record<string, string> {
+  return {
+    ...(process.env as Record<string, string>),
+    DATA_BACKEND: "memory",
+    NEXT_PUBLIC_APP_URL: url,
+    DEMO_MODE: "true",
+    DEMO_ADMIN_SECRET: "e2e-demo-admin-secret",
+    SESSION_SECRET: process.env.SESSION_SECRET ?? "e2e-only-session-secret-not-for-production-use",
+    PHYSICAL_PRODUCTS: physical,
+  };
+}

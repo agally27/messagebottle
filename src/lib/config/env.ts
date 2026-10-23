@@ -45,6 +45,9 @@ const schema = z.object({
   EMAIL_FROM: z.string().default("Message in a Bottle <hello@example.com>"),
 
   ADMIN_EMAILS: z.string().default(""),
+  // Physical keepsakes (bottles, boxes) are sold only when this is "on": switch it on once
+  // a supplier and packing process exist. Existing physical orders keep working either way.
+  PHYSICAL_PRODUCTS: z.enum(["on", "off"]).default("off"),
 });
 
 function emptyToUndefined(input: NodeJS.ProcessEnv): Record<string, string | undefined> {
@@ -96,6 +99,7 @@ export const env = {
   storyProvider: raw.STORY_PROVIDER === "auto" ? (raw.ANTHROPIC_API_KEY ? "anthropic" : "local") : raw.STORY_PROVIDER,
   imageProvider: raw.IMAGE_PROVIDER === "openai" && raw.OPENAI_API_KEY ? "openai" : "procedural",
   narrationProvider: raw.NARRATION_PROVIDER === "elevenlabs" && raw.ELEVENLABS_API_KEY ? "elevenlabs" : "none",
+  physicalProducts: raw.PHYSICAL_PRODUCTS === "on",
   adminEmails: raw.ADMIN_EMAILS.split(",").map((s) => s.trim().toLowerCase()).filter(Boolean),
 } as const;
 
@@ -116,5 +120,6 @@ export function configurationSummary() {
     musicProvider: env.MUSIC_PROVIDER,
     sessionSecret: Boolean(env.SESSION_SECRET),
     jobsSecret: Boolean(env.JOBS_SECRET),
+    physicalProducts: env.physicalProducts,
   };
 }

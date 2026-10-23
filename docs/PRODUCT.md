@@ -29,6 +29,8 @@ Remembrance is handled with particular care: gentle language, no celebratory opt
 | Memory Bottle | + the Little Bottle, with three of the gift's photos as mini prints tied alongside with twine; needs at least one photo | £24.99 + £3.95 UK delivery |
 | Christmas Bottle (seasonal, 1 Oct – 18 Dec) | Christmas card printed and rolled inside, red ribbon and faux holly, lightly scented card (winter spice, fireside pine or unscented), QR to the story with a personalised carol | £19.99 + £3.95 UK delivery |
 
+**Launch focus: the digital gift.** Physical products are switched off by default (`PHYSICAL_PRODUCTS=off`): the site offers only the Digital Gift, shows keepsake bottles as "coming soon", the Christmas section promotes the digital Christmas story (until 26 December), and the server refuses physical orders even from hand-edited URLs. Existing physical orders still show and can be fulfilled from `/admin`. Switch it `on` once a supplier and packing process exist.
+
 Prices are configuration (`src/lib/config/products.ts`). Before going live, validate against generation costs, payment fees, materials, packaging, fulfilment, shipping, returns and VAT. No supplier, stock or delivery promises exist yet; physical fulfilment starts manual (admin view, print-ready message, QR code).
 
 ## Language

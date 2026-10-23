@@ -5,15 +5,15 @@ import { getOccasion } from "@/lib/domain/occasions";
 import { getTheme } from "@/lib/domain/themes";
 import { getTone } from "@/lib/domain/tones";
 import { parseSongLink } from "@/lib/domain/song";
-import { getProduct, formatPrice } from "@/lib/config/products";
+import { formatPrice } from "@/lib/config/products";
+import type { Product } from "@/lib/domain/types";
 import type { StepProps } from "../CreateWizard";
 import { StepHeader } from "./StepHeader";
 
-export function ReviewStep({ input, goTo, demoMode, signedIn, productId, photoCount }: StepProps & { goTo: (i: number) => void; demoMode: boolean; signedIn: boolean; productId: string | null; photoCount: number }) {
+export function ReviewStep({ input, goTo, demoMode, signedIn, product, fromMinor, photoCount }: StepProps & { goTo: (i: number) => void; demoMode: boolean; signedIn: boolean; product: Product | null; fromMinor: number; photoCount: number }) {
   const song = parseSongLink(input.songUrl);
   const occasion = getOccasion(input.occasion);
   const theme = getTheme(input.theme);
-  const product = productId ? getProduct(productId) : null;
   const transformation = { close: "Keep my words as they are", story: "Shape it into a story", poetic: "Make it more poetic" }[input.transformation];
   return (
     <div>
@@ -65,7 +65,7 @@ export function ReviewStep({ input, goTo, demoMode, signedIn, productId, photoCo
                 <li>You read and edit every line in the preview.</li>
                 <li>When you&apos;re happy, you pay and share the private link{product && product.kind === "physical" ? `, and we prepare the ${product.name}` : ""}.</li>
               </ol>
-              {product ? <p className="mt-3">Selected: <span className="font-semibold text-ink">{product.name}</span> · {formatPrice(product.priceMinor)}{product.requiresShipping && product.shippingMinor ? ` + ${formatPrice(product.shippingMinor)} delivery` : ""}. You can change this at checkout.</p> : <p className="mt-3">Preview is free. Prices from {formatPrice(499)} when you choose to send.</p>}
+              {product ? <p className="mt-3">Selected: <span className="font-semibold text-ink">{product.name}</span> · {formatPrice(product.priceMinor)}{product.requiresShipping && product.shippingMinor ? ` + ${formatPrice(product.shippingMinor)} delivery` : ""}. You can change this at checkout.</p> : <p className="mt-3">Preview is free. Prices from {formatPrice(fromMinor)} when you choose to send.</p>}
             </div>
           </div>
           {demoMode ? (

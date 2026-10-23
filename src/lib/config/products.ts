@@ -3,7 +3,8 @@ import type { Product } from "@/lib/domain/types";
 /**
  * Product catalogue. Prices are INDICATIVE hypotheses (see docs/PRODUCT.md) and
  * are the only source of truth for checkout — the client never supplies a price.
- * Amounts are in minor units (pence).
+ * Amounts are in minor units (pence). Safe for client code; what can be sold
+ * right now (season, physical switch) is decided server-side in ./catalogue.
  */
 export const PRODUCTS: readonly Product[] = [
   {
@@ -129,15 +130,9 @@ export function isInSeason(p: Pick<Product, "season">, now: Date = new Date()): 
   return from <= until ? md >= from && md <= until : md >= from || md <= until;
 }
 
-export function getProduct(id: string, now: Date = new Date()): Product | null {
-  return PRODUCTS.find((p) => p.id === id && p.available && isInSeason(p, now)) ?? null;
-}
-
-export function listProducts(opts: { now?: Date; seasonal?: boolean } = {}): Product[] {
-  const now = opts.now ?? new Date();
-  return [...PRODUCTS]
-    .filter((p) => p.available && isInSeason(p, now) && (opts.seasonal === undefined || Boolean(p.season) === opts.seasonal))
-    .sort((a, b) => a.sort - b.sort);
+/** True when a product may be sold: in season, available, and (if physical) physical sales are on. */
+export function isSellable(p: Product, opts: { now?: Date; physical: boolean }): boolean {
+  return p.available && isInSeason(p, opts.now) && (p.kind === "digital" || opts.physical);
 }
 
 /** Label for a chosen option value, e.g. scent id → "Winter spice". */
@@ -150,14 +145,4 @@ export function describeOptions(productId: string, options: Record<string, strin
 
 export function formatPrice(minor: number, currency = "GBP", locale = "en-GB"): string {
   return new Intl.NumberFormat(locale, { style: "currency", currency, minimumFractionDigits: 2 }).format(minor / 100);
-}
-
-/** Server-side order total. Never trust a client-supplied amount. */
-export function priceOrder(productId: string, quantity = 1, now: Date = new Date()): { subtotalMinor: number; shippingMinor: number; totalMinor: number; product: Product } | null {
-  const product = getProduct(productId, now);
-  if (!product) return null;
-  const qty = Math.max(1, Math.min(5, Math.floor(quantity)));
-  const subtotalMinor = product.priceMinor * qty;
-  const shippingMinor = product.requiresShipping ? product.shippingMinor : 0;
-  return { subtotalMinor, shippingMinor, totalMinor: subtotalMinor + shippingMinor, product };
 }

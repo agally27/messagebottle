@@ -6,7 +6,7 @@ export const siteConfig = {
   shortName: "Bottle",
   tagline: "More than a message. A feeling, made for you.",
   description:
-    "Turn a personal message into a beautiful, personalised digital story with music and imagery — and, if you like, a real keepsake bottle to hold it.",
+    "Turn a personal message into a beautiful, personalised digital story with music and imagery, opened like a message in a bottle.",
   url: (
     process.env.NEXT_PUBLIC_APP_URL ||
     (process.env.NEXT_PUBLIC_VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.NEXT_PUBLIC_VERCEL_PROJECT_PRODUCTION_URL}` : "") ||

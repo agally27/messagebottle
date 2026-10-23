@@ -3,7 +3,8 @@ import { CAROLS, carolLengthBeats, personaliseCarol } from "./carols";
 import { MUSIC_MOODS, moodsForOccasion } from "./music";
 import { getOccasion } from "./occasions";
 import { getTheme } from "./themes";
-import { getProduct, isInSeason, listProducts, priceOrder } from "@/lib/config/products";
+import { isInSeason } from "@/lib/config/products";
+import { getProduct, listProducts, priceOrder } from "@/lib/config/catalogue";
 import { buildBrief } from "@/lib/story/brief";
 import { writeLocalStory } from "@/lib/story/local-writer";
 import { assignScenes, withCarolScene } from "@/lib/story/scenes";
@@ -74,13 +75,13 @@ describe("Christmas Bottle availability", () => {
   const dayAfter = new Date("2026-12-19T00:30:00Z");
 
   it("is sold only inside its season (UK dates)", () => {
-    const p = getProduct("christmas-bottle", nov)!;
+    const p = getProduct("christmas-bottle", { now: nov })!;
     expect(p.scentOptions?.map((s) => s.id)).toEqual(["winter-spice", "fireside-pine", "unscented"]);
-    expect(getProduct("christmas-bottle", jan)).toBeNull();
+    expect(getProduct("christmas-bottle", { now: jan })).toBeNull();
     expect(isInSeason(p, lastDay)).toBe(true);
     expect(isInSeason(p, dayAfter)).toBe(false);
-    expect(priceOrder("christmas-bottle", 1, nov)?.totalMinor).toBe(1999 + 395);
-    expect(priceOrder("christmas-bottle", 1, jan)).toBeNull();
+    expect(priceOrder("christmas-bottle", 1, { now: nov })?.totalMinor).toBe(1999 + 395);
+    expect(priceOrder("christmas-bottle", 1, { now: jan })).toBeNull();
   });
 
   it("is kept out of the evergreen product grid but offered at checkout in season", () => {

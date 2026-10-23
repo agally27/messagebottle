@@ -4,6 +4,7 @@ import { Reveal } from "@/components/ui/Reveal";
 import boxClosed from "@/assets/brand/box-closed.jpg";
 import boxOpen from "@/assets/brand/box-open.jpg";
 import scanPhone from "@/assets/brand/scan-phone.jpg";
+import { physicalProductsEnabled } from "@/lib/config/catalogue";
 
 const STEPS = [
   { n: "1", title: "Beautifully packaged", body: "A kraft gift box, tied with twine and a wooden heart, with your recipient's name on the card.", img: boxClosed, alt: "A kraft gift box tied with twine and a small wooden heart" },
@@ -11,7 +12,9 @@ const STEPS = [
   { n: "3", title: "Scan & discover", body: "One scan opens the illustrated story on their phone, with the soundtrack you chose. No app, no account.", img: scanPhone, alt: "A hand holding a phone showing an illustrated sunset story" },
 ] as const;
 
+/** The physical Little Bottle; hidden while physical products are switched off. */
 export function InsideTheBox() {
+  if (!physicalProductsEnabled()) return null;
   return (
     <section id="the-bottle" className="scroll-mt-20 kraft py-16 sm:py-24">
       <div className="container-page">

@@ -2,7 +2,8 @@ import { Button } from "@/components/ui/Button";
 import { Reveal } from "@/components/ui/Reveal";
 import { GlowingBottle } from "@/components/art/GlowingBottle";
 import { SceneArt } from "@/components/art/SceneArt";
-import { formatPrice, getProduct } from "@/lib/config/products";
+import { formatPrice, isInSeason } from "@/lib/config/products";
+import { getProduct } from "@/lib/config/catalogue";
 
 const FEATURES = [
   { title: "Your Christmas card, inside", body: "Your message printed as a card, rolled and tied with red ribbon and holly." },
@@ -11,10 +12,25 @@ const FEATURES = [
   { title: "From the family, or for it", body: "Send it to Grandma and Grandad, or from all of you to someone far away." },
 ];
 
-/** Seasonal section; renders nothing outside the Christmas selling window. */
+const DIGITAL_SEASON = { from: "10-01", until: "12-26", label: "Christmas" };
+
+const DIGITAL_FEATURES = [
+  { title: "A Christmas story, illustrated", body: "Your message shaped into scenes of snow, fir trees and fairy lights." },
+  { title: "A carol, just for them", body: "Silent Night, Jingle Bells and more, with new words that sing their names." },
+  { title: "A bottle that glows", body: "It uncorks on their screen, wherever in the world they are." },
+  { title: "From the family, or for it", body: "Send it to Grandma and Grandad, or from all of you to someone far away." },
+];
+
+/**
+ * Seasonal section; renders nothing outside the Christmas window. Shows the
+ * Christmas Bottle when physical products are on, otherwise the digital
+ * Christmas story.
+ */
 export function ChristmasSection() {
   const product = getProduct("christmas-bottle");
-  if (!product) return null;
+  // The digital story can be sent right up to Christmas; the bottle stops at the last posting date.
+  if (!product && !isInSeason({ season: DIGITAL_SEASON })) return null;
+  const digital = getProduct("digital");
   return (
     <section id="christmas" className="relative scroll-mt-20 overflow-hidden bg-[#122820] py-16 text-text-on-dark sm:py-24">
       <div className="pointer-events-none absolute inset-0 opacity-60" aria-hidden>
@@ -23,11 +39,11 @@ export function ChristmasSection() {
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#122820] via-[#122820]/85 to-[#122820]/30" aria-hidden />
       <div className="container-page relative grid items-center gap-12 lg:grid-cols-[1.1fr_0.9fr]">
         <Reveal>
-          <p className="text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[#f2c46d]">Seasonal · The Christmas Bottle</p>
-          <h2 className="mt-3 text-3xl text-text-on-dark sm:text-5xl">A Christmas card that glows, smells of the season, and sings.</h2>
+          <p className="text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[#f2c46d]">{product ? "Seasonal · The Christmas Bottle" : "Seasonal · Christmas"}</p>
+          <h2 className="mt-3 text-3xl text-text-on-dark sm:text-5xl">{product ? "A Christmas card that glows, smells of the season, and sings." : "A Christmas card that glows, opens, and sings."}</h2>
           <p className="mt-4 max-w-xl font-hand text-2xl text-[#f2c46d] sm:text-3xl">Merry Christmas, from all of us.</p>
           <ul className="mt-8 grid gap-5 sm:grid-cols-2">
-            {FEATURES.map((f) => (
+            {(product ? FEATURES : DIGITAL_FEATURES).map((f) => (
               <li key={f.title} className="flex gap-3">
                 <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-[#b8403a] ring-4 ring-[#b8403a]/25" aria-hidden />
                 <span>
@@ -38,14 +54,24 @@ export function ChristmasSection() {
             ))}
           </ul>
           <div className="mt-9 flex flex-wrap items-center gap-4">
-            <Button href="/create?occasion=christmas&product=christmas-bottle&theme=winter" size="lg" variant="gold">
-              Create a Christmas bottle
+            <Button href={product ? "/create?occasion=christmas&product=christmas-bottle&theme=winter" : "/create?occasion=christmas&theme=winter"} size="lg" variant="gold">
+              {product ? "Create a Christmas bottle" : "Create a Christmas gift"}
             </Button>
-            <p className="text-sm text-text-on-dark-muted">
-              <span className="font-display text-2xl text-text-on-dark">{formatPrice(product.priceMinor)}</span> + {formatPrice(product.shippingMinor)} UK delivery
-            </p>
+            {product ? (
+              <p className="text-sm text-text-on-dark-muted">
+                <span className="font-display text-2xl text-text-on-dark">{formatPrice(product.priceMinor)}</span> + {formatPrice(product.shippingMinor)} UK delivery
+              </p>
+            ) : digital ? (
+              <p className="text-sm text-text-on-dark-muted">
+                <span className="font-display text-2xl text-text-on-dark">{formatPrice(digital.priceMinor)}</span> to send, by private link
+              </p>
+            ) : null}
           </div>
-          <p className="mt-4 text-xs text-text-on-dark-muted">Made to order in the UK; we confirm dispatch by email. Available until {product.season ? new Date(`2000-${product.season.until}T12:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "long" }) : "Christmas"}. The digital Christmas story can be sent any time.</p>
+          {product ? (
+            <p className="mt-4 text-xs text-text-on-dark-muted">Made to order in the UK; we confirm dispatch by email. Available until {product.season ? new Date(`2000-${product.season.until}T12:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "long" }) : "Christmas"}. The digital Christmas story can be sent any time.</p>
+          ) : (
+            <p className="mt-4 text-xs text-text-on-dark-muted">Opens on any phone, no app or account needed. Preview the whole thing before you pay.</p>
+          )}
         </Reveal>
         <Reveal delay={150} className="relative mx-auto flex w-full max-w-sm justify-center">
           <div className="absolute inset-0 rounded-full halo blur-2xl" aria-hidden />

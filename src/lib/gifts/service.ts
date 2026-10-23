@@ -1,6 +1,6 @@
 import "server-only";
 import { env } from "@/lib/config/env";
-import { getProduct } from "@/lib/config/products";
+import { getProduct } from "@/lib/config/catalogue";
 import { getMusicMood, musicDisclosure } from "@/lib/domain/music";
 import { parseSongLink } from "@/lib/domain/song";
 import { deleteGiftMedia, photosOf } from "./photos";

@@ -49,6 +49,7 @@ export function CheckoutForm({ giftId, products, initialProductId, recipientName
   return (
     <div className="grid gap-8 lg:grid-cols-[1fr_340px]">
       <div className="space-y-8">
+{products.length > 1 ? (
         <fieldset>
           <legend className="text-lg font-semibold text-ink">Choose your gift</legend>
           <div className="mt-4 grid gap-3" role="radiogroup" aria-label="Product">
@@ -57,6 +58,17 @@ export function CheckoutForm({ giftId, products, initialProductId, recipientName
             ))}
           </div>
         </fieldset>
+        ) : (
+          <section aria-labelledby="checkout-product">
+            <h2 id="checkout-product" className="text-lg font-semibold text-ink">{product.name}</h2>
+            <p className="mt-1 text-sm text-text-muted">{product.tagline}</p>
+            <ul className="mt-3 space-y-1.5 text-sm text-text-muted">
+              {product.features.map((f) => (
+                <li key={f}>· {f}</li>
+              ))}
+            </ul>
+          </section>
+        )}
 
         {product.scentOptions?.length ? (
           <fieldset>

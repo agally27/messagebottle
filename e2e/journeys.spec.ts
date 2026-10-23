@@ -68,7 +68,7 @@ test.describe("marketing", () => {
     await expect(page.getByRole("heading", { level: 1 })).toContainText(/feeling/i);
     await expect(page.getByRole("link", { name: "Create your gift" }).first()).toBeVisible();
     await expect(page.getByRole("link", { name: /open an example/i }).first()).toBeVisible();
-    await expect(page.getByText("£4.99", { exact: true })).toBeVisible();
+    await expect(page.getByText("£4.99", { exact: true }).first()).toBeVisible();
   });
 
   test("example gift can be opened and read to the end", async ({ page }) => {

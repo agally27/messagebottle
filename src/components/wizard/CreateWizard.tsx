@@ -10,7 +10,7 @@ import { stepSchemas, formatIssues } from "@/lib/domain/schemas";
 import { OCCASION_IDS, getOccasion } from "@/lib/domain/occasions";
 import { THEME_IDS } from "@/lib/domain/themes";
 import { isCarol } from "@/lib/domain/music";
-import type { GiftInput, OccasionId, ThemeId } from "@/lib/domain/types";
+import type { GiftInput, OccasionId, Product, ThemeId } from "@/lib/domain/types";
 import { clearDraft, DEFAULT_INPUT, loadDraft, saveDraft } from "./draft";
 import { OccasionStep } from "./steps/OccasionStep";
 import { RecipientStep } from "./steps/RecipientStep";
@@ -41,7 +41,8 @@ export interface StepProps {
   errors: FieldErrors;
 }
 
-export function CreateWizard({ demoMode, signedIn, requiresSignIn }: { demoMode: boolean; signedIn: boolean; requiresSignIn: boolean }) {
+/** `products`: what the server says can be sold right now (a stale ?product= link for an unavailable item is ignored). */
+export function CreateWizard({ demoMode, signedIn, requiresSignIn, products }: { demoMode: boolean; signedIn: boolean; requiresSignIn: boolean; products: Product[] }) {
   const params = useSearchParams();
   const router = useRouter();
   const initial = useMemo(() => {
@@ -59,7 +60,9 @@ export function CreateWizard({ demoMode, signedIn, requiresSignIn }: { demoMode:
     }
     const themeParam = params.get("theme");
     if (themeParam && (THEME_IDS as readonly string[]).includes(themeParam)) input.theme = themeParam as ThemeId;
-    return { input, step: saved?.step ?? 0, productId: productParam ?? saved?.productId ?? null, resumed: Boolean(saved?.input?.message) };
+    const wanted = productParam ?? saved?.productId ?? null;
+    const productId = wanted && products.some((p) => p.id === wanted) ? wanted : null;
+    return { input, step: saved?.step ?? 0, productId, resumed: Boolean(saved?.input?.message) };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -218,7 +221,7 @@ export function CreateWizard({ demoMode, signedIn, requiresSignIn }: { demoMode:
         {stepId === "memories" ? <MemoriesStep {...stepProps} photos={photos} setPhotos={setPhotos} /> : null}
         {stepId === "style" ? <StyleStep {...stepProps} /> : null}
         {stepId === "sound" ? <SoundStep {...stepProps} /> : null}
-        {stepId === "review" ? <ReviewStep {...stepProps} goTo={goTo} demoMode={demoMode} signedIn={signedIn} productId={initial.productId} photoCount={photos.length} /> : null}
+        {stepId === "review" ? <ReviewStep {...stepProps} goTo={goTo} demoMode={demoMode} signedIn={signedIn} product={products.find((p) => p.id === initial.productId) ?? null} fromMinor={products.length ? Math.min(...products.map((p) => p.priceMinor)) : 499} photoCount={photos.length} /> : null}
       </section>
 
       {formError ? (

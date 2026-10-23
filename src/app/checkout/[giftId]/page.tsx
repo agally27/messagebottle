@@ -5,7 +5,7 @@ import { CheckoutForm } from "@/components/checkout/CheckoutForm";
 import { Notice } from "@/components/ui/Notice";
 import { requireUserOrRedirect } from "@/lib/auth/guards";
 import { env } from "@/lib/config/env";
-import { listProducts } from "@/lib/config/products";
+import { listProducts } from "@/lib/config/catalogue";
 import { getStore } from "@/lib/data";
 import { demoCheckoutAvailable } from "@/lib/payments/checkout";
 

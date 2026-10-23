@@ -6,19 +6,22 @@ import { Button } from "@/components/ui/Button";
 import { requireUserOrRedirect } from "@/lib/auth/guards";
 import { env } from "@/lib/config/env";
 import { getStore } from "@/lib/data";
-import { formatPrice, listProducts } from "@/lib/config/products";
+import { formatPrice } from "@/lib/config/products";
+import { listProducts } from "@/lib/config/catalogue";
 import { demoCheckoutAvailable } from "@/lib/payments/checkout";
 
 export const metadata: Metadata = { title: "Send your gift", robots: { index: false } };
 export const dynamic = "force-dynamic";
 
-/** Product choice before checkout. Checkout itself arrives in milestone 6. */
+/** Product choice before checkout (digital or a physical keepsake). */
 export default async function SendPage({ params }: PageProps<"/gifts/[id]/send">) {
   const { id } = await params;
   const user = await requireUserOrRedirect(`/gifts/${id}/send`);
   const gift = await getStore().gifts.get(id);
   if (!gift || gift.ownerId !== user.id) notFound();
   if (!gift.story) redirect(`/gifts/${id}`);
+  // Only one way to send while physical keepsakes are off: go straight to checkout.
+  if (!env.physicalProducts) redirect(`/checkout/${id}?product=digital`);
   const products = listProducts();
   return (
     <AppShell narrow className="max-w-4xl">

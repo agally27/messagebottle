@@ -3,7 +3,7 @@ import { Products } from "@/components/marketing/Products";
 import { ChristmasSection } from "@/components/marketing/ChristmasSection";
 import { FAQ } from "@/components/marketing/FAQ";
 
-export const metadata: Metadata = { title: "Pricing", description: "Digital stories from £4.99. Keepsake bottles and gift boxes with your message inside." };
+export const metadata: Metadata = { title: "Pricing", description: "Personalised digital stories from £4.99. Free to create and preview." };
 
 export default function PricingPage() {
   return (

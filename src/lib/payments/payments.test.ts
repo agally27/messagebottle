@@ -8,7 +8,7 @@ import { LocalStoryProvider } from "@/lib/story/local-writer";
 import { ProceduralImageProvider } from "@/lib/providers/image/procedural";
 import { ProceduralMusicProvider } from "@/lib/providers/music/procedural";
 import { NoNarrationProvider } from "@/lib/providers/narration/none";
-import { priceOrder } from "@/lib/config/products";
+import { priceOrder } from "@/lib/config/catalogue";
 import { createPendingOrder, markOrderPaid, updateFulfilment } from "@/lib/orders/service";
 import { handleStripeEvent } from "./webhook";
 
@@ -53,7 +53,8 @@ describe("orders and webhooks", () => {
   });
 
   it("requires a valid fragrance for scented products and records it on the order", async () => {
-    const { isInSeason, getProduct: gp } = await import("@/lib/config/products");
+    const { isInSeason } = await import("@/lib/config/products");
+    const { getProduct: gp } = await import("@/lib/config/catalogue");
     const product = (await import("@/lib/config/products")).PRODUCTS.find((p) => p.id === "christmas-bottle")!;
     if (!isInSeason(product) || !gp("christmas-bottle")) return; // out of season: checkout correctly refuses it
     const gift = await readyGift();

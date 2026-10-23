@@ -6,6 +6,7 @@ import type {
   EmailDelivery,
   GenerationJob,
   Gift,
+  GiftReply,
   Order,
   PaymentEvent,
   ScheduledDelivery,
@@ -23,11 +24,12 @@ interface Db {
   audit: AuditEvent[];
   emails: Record<string, EmailDelivery>;
   deliveries: Record<string, ScheduledDelivery>;
+  replies: Record<string, GiftReply>;
   rateLimits: Record<string, { count: number; resetAt: number }>;
 }
 
 function emptyDb(): Db {
-  return { version: 1, users: {}, gifts: {}, jobs: {}, orders: {}, payments: {}, audit: [], emails: {}, deliveries: {}, rateLimits: {} };
+  return { version: 1, users: {}, gifts: {}, jobs: {}, orders: {}, payments: {}, audit: [], emails: {}, deliveries: {}, replies: {}, rateLimits: {} };
 }
 
 const clone = <T>(v: T): T => (v === undefined ? v : (JSON.parse(JSON.stringify(v)) as T));
@@ -154,6 +156,7 @@ export class LocalStore implements DataStore {
       delete this.db.gifts[id];
       for (const [jid, j] of Object.entries(this.db.jobs)) if (j.giftId === id) delete this.db.jobs[jid];
       for (const [did, d] of Object.entries(this.db.deliveries)) if (d.giftId === id) delete this.db.deliveries[did];
+      for (const [rid, r] of Object.entries(this.db.replies)) if (r.giftId === id) delete this.db.replies[rid];
       this.schedulePersist();
       return true;
     },
@@ -388,6 +391,34 @@ export class LocalStore implements DataStore {
       d.updatedAt = now;
       this.schedulePersist();
       return clone(d);
+    },
+  };
+
+  replies: DataStore["replies"] = {
+    create: async (r) => {
+      await this.ensureLoaded();
+      this.db.replies[r.id] = clone(r);
+      this.schedulePersist();
+      return clone(r);
+    },
+    listByGift: async (giftId) => {
+      await this.ensureLoaded();
+      return clone(Object.values(this.db.replies).filter((r) => r.giftId === giftId).sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
+    },
+    countByGift: async (giftId) => {
+      await this.ensureLoaded();
+      return Object.values(this.db.replies).filter((r) => r.giftId === giftId).length;
+    },
+    markRead: async (giftId, at) => {
+      await this.ensureLoaded();
+      for (const r of Object.values(this.db.replies)) if (r.giftId === giftId && !r.readAt) r.readAt = at;
+      this.schedulePersist();
+    },
+    unreadCountsByOwner: async (ownerId) => {
+      await this.ensureLoaded();
+      const out: Record<string, number> = {};
+      for (const r of Object.values(this.db.replies)) if (r.ownerId === ownerId && !r.readAt) out[r.giftId] = (out[r.giftId] ?? 0) + 1;
+      return out;
     },
   };
 

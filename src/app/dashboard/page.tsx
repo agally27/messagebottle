@@ -29,7 +29,7 @@ const STATUS: Record<GiftStatus, { label: string; tone: "neutral" | "gold" | "te
 export default async function DashboardPage() {
   const user = await requireUserOrRedirect("/dashboard");
   const store = getStore();
-  const [gifts, orders] = await Promise.all([store.gifts.listByOwner(user.id), store.orders.listByOwner(user.id)]);
+  const [gifts, orders, unread] = await Promise.all([store.gifts.listByOwner(user.id), store.orders.listByOwner(user.id), store.replies.unreadCountsByOwner(user.id)]);
   return (
     <AppShell
       right={
@@ -91,6 +91,11 @@ export default async function DashboardPage() {
                     Updated {new Date(g.updatedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
                     {g.status === "active" ? ` · opened ${g.openCount}×` : ""}
                   </p>
+                  {unread[g.id] ? (
+                    <Link href={`/gifts/${g.id}#replies`} className="mt-2 inline-flex">
+                      <Badge tone="gold">{unread[g.id] === 1 ? "New reply" : `${unread[g.id]} new replies`}</Badge>
+                    </Link>
+                  ) : null}
                   <div className="mt-3 flex flex-wrap gap-2">
                     <Button href={g.status === "generating" || g.status === "draft" ? `/gifts/${g.id}/generating` : `/gifts/${g.id}`} size="sm" variant="secondary">
                       {g.status === "generating" ? "View progress" : "Open"}

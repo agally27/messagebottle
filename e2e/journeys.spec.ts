@@ -122,7 +122,7 @@ test.describe("sender journey", () => {
     await expect(page.getByText(/your gift is live/i)).toBeVisible({ timeout: 15_000 });
     // Guests (free accounts) can't have us email people until the gift is paid for.
     await expect(page.getByText(/email delivery is available once the gift is paid for/i)).toBeVisible();
-    await expect(page.getByLabel("Their email address")).toBeDisabled();
+    await expect(page.getByLabel("Their email address")).toHaveCount(0);
     const fullLink = await page.getByLabel("Private gift link").inputValue();
     expect(fullLink).toMatch(/\/g\/[A-Za-z0-9_-]{40,}$/);
     // The link carries the public origin (NEXT_PUBLIC_APP_URL); test against this server.
@@ -155,9 +155,28 @@ test.describe("sender journey", () => {
     const html = await rp.content();
     expect(html).not.toContain("ownerId");
     expect(html).not.toContain("/gifts/");
+
+    // At the end, the recipient writes back.
+    for (let i = 0; i < 12 && !(await rp.getByRole("button", { name: /write back to tom/i }).isVisible()); i++) {
+      await rp.getByRole("button", { name: /^(next|finish)$/i }).click();
+    }
+    await rp.getByRole("button", { name: /write back to tom/i }).click();
+    await rp.getByLabel(/your reply to tom/i).fill("Thank you, <b>Tom</b>.\nI cried on the bus.");
+    await rp.keyboard.press("ArrowLeft"); // typing never moves the story
+    await rp.getByRole("button", { name: "Send reply" }).click();
+    await expect(rp.getByText(/sent\. only tom will see it/i)).toBeVisible();
+    await shot(rp, "recipient-replied");
     await recipient.close();
-    await page.reload();
+
+    // The sender sees a new reply on My gifts and reads it on the gift page (as text, never HTML).
+    await page.goto("/dashboard");
+    await page.getByRole("link", { name: /new reply/i }).click();
+    await expect(page).toHaveURL(/#replies$/);
+    await expect(page.getByRole("heading", { name: /replies from maya/i })).toBeVisible();
+    await expect(page.getByText("Thank you, <b>Tom</b>.", { exact: false })).toBeVisible();
+    await expect(page.locator("#replies b")).toHaveCount(0);
     await expect(page.getByText(/^Opened 1 time/)).toBeVisible();
+    await shot(page, "sender-replies");
 
     // Another signed-in user cannot open the sender's gift page.
     const stranger = await browser.newContext();

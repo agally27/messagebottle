@@ -91,6 +91,7 @@ export function DeliveryPanel({ giftId, recipientName, emailAvailable, canEmail,
         </div>
       ) : null}
 
+      {enabled ? (
       <form
         noValidate
         className="mt-4 space-y-4"
@@ -121,6 +122,7 @@ export function DeliveryPanel({ giftId, recipientName, emailAvailable, canEmail,
           {pending ? "One moment…" : when === "now" ? "Send now" : `Schedule for ${sendOn ? longDate(sendOn) : "that day"}`}
         </Button>
       </form>
+      ) : null}
 
       {notice ? (
         <Notice tone={notice.tone} className="mt-3">

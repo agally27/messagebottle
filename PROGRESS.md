@@ -21,7 +21,7 @@ Functional development build. In demo mode (no credentials) the complete journey
 | --- | --- | --- |
 | Types | `pnpm typecheck` | pass |
 | Lint | `pnpm lint` | pass, 0 warnings |
-| Unit | `pnpm test` | 77 tests pass (5 Supabase integration tests skipped without a database; run with `pnpm test:supabase`). Original 34 covered (story writer, quality, pipeline retries/failures/idempotency/rate limit, regeneration and deletion guards, public projection, retention sweep, safe redirects, ownership, pricing, webhook idempotency/retry/mismatch, refunds, fulfilment transitions) |
+| Unit | `pnpm test` | 83 tests pass (5 Supabase integration tests skipped without a database; run with `pnpm test:supabase`). Original 34 covered (story writer, quality, pipeline retries/failures/idempotency/rate limit, regeneration and deletion guards, public projection, retention sweep, safe redirects, ownership, pricing, webhook idempotency/retry/mismatch, refunds, fulfilment transitions) |
 | Build | `pnpm build` | pass |
 | E2E | `pnpm test:e2e` | 40 pass (12 journeys + 7 axe scans, × mobile + desktop, plus 2 digital-only journeys on a server with physical products off), adding scheduled delivery, Christmas, memory and remembrance journeys to the original set: landing, example reveal, full sender journey incl. stranger access 404 and revoke, draft persistence, invalid links, auth redirect, open-redirect refusal, demo checkout (digital + physical with address validation), print page + QR, non-admin blocked, admin fulfilment to dispatched; axe WCAG A/AA with no serious/critical violations on landing, pricing, wizard, login, support, example (closed and opened) |
 | Security review | adversarial read of auth, actions, routes, payments, RLS | 1 high, 7 medium, 7 low findings — all fixed (see docs/SECURITY.md review log) |
@@ -62,6 +62,13 @@ Functional development build. In demo mode (no credentials) the complete journey
 - Verified: 6 unit tests (once only incl. two simultaneous first opens, no message text or token in the email, owner views not counted, turned off, no address, legacy opened gifts, revoked links); Supabase integration test (default on, concurrent claim gives one winner); Playwright: the sender opening their own link leaves "Not opened yet.", the recipient's open shows "Opened 1 time".
 - **Unverified:** the email arriving through real Resend.
 - **Action for the deployed project:** run `supabase/migrations/0004_open_notifications.sql` before deploying this release.
+
+## Replies
+- The recipient can write back from the gift's final screen ("Write back to Tom"): plain text up to 1,000 characters, no account. Stored in `gift_replies` (migration `0005_gift_replies.sql`, RLS owner-read), shown only to the sender: "Replies from Priya" on the gift page (marked read on view, "New" badge), "New reply" badge on My gifts, and an email ("Priya wrote back", without the words, at most every 30 minutes, following the gift's email checkbox).
+- Limits: 5 replies per gift per hour, 30 per gift, live links only, not from the sender's own session; control and bidi-override characters stripped; rendered as text. Deleted with the gift.
+- Fixed: arrow keys typed in a text field (e.g. a reply) moved the story to another part.
+- Verified: 6 unit tests (cleaning, read/unread, live links only, owner can't reply, hourly and total limits, email throttled and without the reply, opt-out, delete cascade); Supabase integration test with 0005 (newest first, unread counts per owner, mark read, DB length check, cascade); Playwright: the recipient reaches the end, writes back (arrow key while typing doesn't navigate), the sender follows "New reply" from My gifts to the reply, shown as text (HTML not rendered).
+- **Action for the deployed project:** run `supabase/migrations/0005_gift_replies.sql` before deploying this release.
 
 ## Deployment readiness (Vercel + Supabase)
 - Deploy guide: docs/DEPLOYMENT.md. **Not deployed yet**: the build environment cannot reach vercel.com or supabase.com.

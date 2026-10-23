@@ -121,7 +121,7 @@ export function SharePanel({ giftId, status, url, recipientName, demoMode, check
             <label className="flex items-start gap-3 text-sm text-ink">
               <input type="checkbox" checked={openNotice.on} disabled={pending} onChange={(e) => run(() => setOpenNotificationAction(giftId, e.target.checked), e.target.checked ? "We'll email you when it's opened." : "Opened emails turned off.")} className="mt-0.5 h-5 w-5 shrink-0 accent-ink" />
               <span>
-                Email me when {recipientName} first opens it
+                Email me when {recipientName} opens it or writes back
                 <span className="block text-xs text-text-muted">To {openNotice.email}. Your own views of the link don&apos;t count.</span>
               </span>
             </label>

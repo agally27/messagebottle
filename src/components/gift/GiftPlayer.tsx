@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils/cn";
 import { StoryText } from "./StoryText";
 import { BottleMark } from "@/components/ui/Logo";
 import { GlowingBottle } from "@/components/art/GlowingBottle";
+import { ReplyForm } from "./ReplyForm";
 
 type Stage = "closed" | "opening" | "message" | "scene" | "photos" | "song" | "closing" | "keepsake";
 type Phase = "closed" | "opening" | "story" | "keepsake";
@@ -199,7 +200,9 @@ export function GiftPlayer({ gift, preview, startOpen, embedded, banner, classNa
   useEffect(() => {
     if (stage === "closed" || stage === "opening") return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLElement && ["INPUT", "TEXTAREA", "BUTTON"].includes(e.target.tagName) && e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+      // Arrow keys move between parts, except while typing (e.g. a reply).
+      if (e.target instanceof HTMLElement && (["INPUT", "TEXTAREA", "SELECT"].includes(e.target.tagName) || e.target.isContentEditable)) return;
+      if (e.target instanceof HTMLElement && e.target.tagName === "BUTTON" && e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
       if (e.key === "ArrowRight") goNext();
       if (e.key === "ArrowLeft") goBack();
     };
@@ -405,6 +408,7 @@ export function GiftPlayer({ gift, preview, startOpen, embedded, banner, classNa
               <button type="button" onClick={replay} className={cn("inline-flex h-12 items-center rounded-full border px-6 text-sm font-semibold", dark ? "border-white/30 text-text-on-dark hover:bg-white/10" : "border-ink/30 text-ink hover:bg-ink/5")}>
                 Read it again
               </button>
+              {gift.token !== "example" ? <ReplyForm token={gift.token} senderName={gift.senderName} dark={dark} accent={theme.palette.accent2} preview={preview} /> : null}
             </div>
             {music?.disclosure ? <p className={cn("mt-8 text-[0.7rem]", mutedColor)}>{music.disclosure}</p> : null}
           </div>

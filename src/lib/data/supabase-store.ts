@@ -2,7 +2,7 @@ import "server-only";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { env } from "@/lib/config/env";
 import type { DataStore } from "./store";
-import type { AuditEvent, DeliveryStatus, EmailDelivery, GenerationJob, Gift, JobStatus, Order, OrderStatus, ScheduledDelivery, UserProfile } from "@/lib/domain/types";
+import type { AuditEvent, DeliveryStatus, EmailDelivery, GenerationJob, Gift, GiftReply, JobStatus, Order, OrderStatus, ScheduledDelivery, UserProfile } from "@/lib/domain/types";
 
 /**
  * Supabase (Postgres) store. Uses the server-only secret key: this layer is
@@ -448,6 +448,46 @@ export class SupabaseStore implements DataStore {
       return data ? SupabaseStore.delivery(data) : null;
     },
   };
+
+  replies: DataStore["replies"] = {
+    create: async (r) => {
+      const { data, error } = await this.client.from("gift_replies").insert({ id: r.id, gift_id: r.giftId, owner_id: r.ownerId, message: r.message, created_at: r.createdAt, read_at: r.readAt }).select("*").single();
+      if (error) this.fail("replies.create", error);
+      return SupabaseStore.reply(data);
+    },
+    listByGift: async (giftId) => {
+      const { data, error } = await this.client.from("gift_replies").select("*").eq("gift_id", giftId).order("created_at", { ascending: false });
+      if (error) this.fail("replies.listByGift", error);
+      return (data ?? []).map(SupabaseStore.reply);
+    },
+    countByGift: async (giftId) => {
+      const { count, error } = await this.client.from("gift_replies").select("id", { count: "exact", head: true }).eq("gift_id", giftId);
+      if (error) this.fail("replies.countByGift", error);
+      return count ?? 0;
+    },
+    markRead: async (giftId, at) => {
+      const { error } = await this.client.from("gift_replies").update({ read_at: at }).eq("gift_id", giftId).is("read_at", null);
+      if (error) this.fail("replies.markRead", error);
+    },
+    unreadCountsByOwner: async (ownerId) => {
+      const { data, error } = await this.client.from("gift_replies").select("gift_id").eq("owner_id", ownerId).is("read_at", null);
+      if (error) this.fail("replies.unreadCountsByOwner", error);
+      const out: Record<string, number> = {};
+      for (const row of data ?? []) out[row.gift_id as string] = (out[row.gift_id as string] ?? 0) + 1;
+      return out;
+    },
+  };
+
+  private static reply(row: Record<string, unknown>): GiftReply {
+    return {
+      id: row.id as string,
+      giftId: row.gift_id as string,
+      ownerId: row.owner_id as string,
+      message: row.message as string,
+      createdAt: SupabaseStore.iso(row.created_at)!,
+      readAt: SupabaseStore.iso(row.read_at),
+    };
+  }
 
   emails: DataStore["emails"] = {
     create: async (d) => {

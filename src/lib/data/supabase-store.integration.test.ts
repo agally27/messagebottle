@@ -93,6 +93,23 @@ describe.skipIf(!enabled)("SupabaseStore (integration)", () => {
     expect(await store.deliveries.get(later.id)).toBeNull(); // cascade
   });
 
+  it("stores replies, counts unread per gift, marks them read, and removes them with the gift", async () => {
+    const now = new Date().toISOString();
+    const gift = await store.gifts.create({ id: randomUUID(), ownerId: a.id, status: "active", input, story: null, audio: [], photos: [], publicToken: `tok_${randomUUID()}`, productId: null, openCount: 0, firstOpenedAt: null, lastOpenedAt: null, activatedAt: now, revokedAt: null, expiresAt: null, createdAt: now, updatedAt: now });
+    created.push(gift.id);
+    const r1 = await store.replies.create({ id: randomUUID(), giftId: gift.id, ownerId: a.id, message: "Thank you", createdAt: now, readAt: null });
+    await store.replies.create({ id: randomUUID(), giftId: gift.id, ownerId: a.id, message: "And again", createdAt: new Date(Date.now() + 1000).toISOString(), readAt: null });
+    expect(await store.replies.countByGift(gift.id)).toBe(2);
+    expect((await store.replies.listByGift(gift.id))[1]?.id).toBe(r1.id); // newest first
+    expect((await store.replies.unreadCountsByOwner(a.id))[gift.id]).toBe(2);
+    expect((await store.replies.unreadCountsByOwner(b.id))[gift.id]).toBeUndefined();
+    await store.replies.markRead(gift.id, now);
+    expect((await store.replies.unreadCountsByOwner(a.id))[gift.id]).toBeUndefined();
+    await expect(store.replies.create({ id: randomUUID(), giftId: gift.id, ownerId: a.id, message: "x".repeat(1001), createdAt: now, readAt: null })).rejects.toThrow(); // DB check
+    await store.gifts.delete(gift.id);
+    expect(await store.replies.countByGift(gift.id)).toBe(0); // cascade
+  });
+
   it("claims jobs atomically and lists due work", async () => {
     const now = new Date().toISOString();
     const gift = await store.gifts.create({ id: randomUUID(), ownerId: a.id, status: "generating", input, story: null, audio: [], publicToken: `tok_${randomUUID()}`, productId: null, openCount: 0, firstOpenedAt: null, lastOpenedAt: null, activatedAt: null, revokedAt: null, expiresAt: null, createdAt: now, updatedAt: now });

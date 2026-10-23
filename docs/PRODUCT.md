@@ -51,6 +51,9 @@ From the gift page, once the link is live: copy or share the link, print it as a
 
 Senders with an email address get an email the first time the recipient opens the gift ("Maya opened your message", with the time). It's on by default and can be turned off per gift; it never includes the message. The sender's own views of the link don't count as opens.
 
+## Replies
+At the end of the gift, the recipient can **write back** to the sender: a short private note (up to 1,000 characters), no account needed. The sender gets an email ("Priya wrote back", without the words), sees a "New reply" badge on My gifts, and reads the replies on the gift page. Only the sender ever sees them. The same per-gift email checkbox covers opens and replies.
+
 ## Memory in a Bottle
 For gifts made of shared history: two people who met years ago, a friendship, a family, or someone who has died. Any gift can carry:
 - **Photos** — up to 12, each with an optional caption and year. Photos with years show as a then-and-now timeline in the story ("Moments worth keeping"). They are re-encoded on upload (resized, metadata including location removed) and shown only through the gift's private link.

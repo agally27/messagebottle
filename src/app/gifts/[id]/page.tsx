@@ -21,6 +21,7 @@ import { getGenerationStatus, publicGiftUrl, toPublicGift } from "@/lib/gifts/se
 import { demoCheckoutAvailable } from "@/lib/payments/checkout";
 import { deliveryPanelData } from "@/lib/gifts/delivery";
 import { openNoticePanel } from "@/lib/gifts/notifications";
+import { repliesForOwner } from "@/lib/gifts/replies";
 
 export const metadata: Metadata = { title: "Your gift", robots: { index: false } };
 export const dynamic = "force-dynamic";
@@ -66,6 +67,7 @@ export default async function GiftPage({ params }: PageProps<"/gifts/[id]">) {
 
   const publicGift = toPublicGift(gift, { preview: true });
   const delivery = await deliveryPanelData(user, gift);
+  const replies = await repliesForOwner(gift);
 
   return (
     <AppShell className="max-w-6xl">
@@ -113,6 +115,27 @@ export default async function GiftPage({ params }: PageProps<"/gifts/[id]">) {
               <SharePanel giftId={gift.id} status={gift.status} url={publicGiftUrl(gift)} recipientName={gift.input.recipientName} demoMode={demoCheckoutAvailable()} checkoutAvailable={env.stripeConfigured || demoCheckoutAvailable()} physicalAvailable={env.physicalProducts} hasPaidOrder={hasPaidOrder} openCount={gift.openCount} lastOpenedAt={gift.lastOpenedAt} emailAvailable={env.emailConfigured} delivery={delivery} openNotice={openNoticePanel(user, gift)} />
             </div>
           </section>
+
+          {gift.status === "active" || replies.length ? (
+            <section id="replies" aria-labelledby="replies-heading" className="scroll-mt-24">
+              <h2 id="replies-heading" className="text-2xl">Replies{replies.length ? ` from ${gift.input.recipientName}` : ""}</h2>
+              {replies.length ? (
+                <ul className="mt-4 space-y-3">
+                  {replies.map((r) => (
+                    <li key={r.id} className="rounded-xl border border-line bg-paper p-5 shadow-soft">
+                      <p className="flex items-center gap-2 text-xs text-text-muted">
+                        {new Date(r.createdAt).toLocaleString("en-GB", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "Europe/London" })}
+                        {r.isNew ? <Badge tone="gold">New</Badge> : null}
+                      </p>
+                      <p className="mt-2 whitespace-pre-line font-display text-[1.08rem] leading-relaxed text-ink">{r.message}</p>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-1 text-sm text-text-muted">When {gift.input.recipientName} reaches the end of the gift, they can write back to you. Replies appear here{openNoticePanel(user, gift) ? ", and we'll email you when one arrives" : ""}.</p>
+              )}
+            </section>
+          ) : null}
 
           <section aria-labelledby="edit-heading">
             <h2 id="edit-heading" className="text-2xl">Edit the words</h2>

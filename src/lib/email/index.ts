@@ -82,6 +82,14 @@ export function giftOpenedEmail(opts: { to: string; recipientName: string; opene
   return { to: opts.to, subject, text, html, template: "gift-opened", giftId: opts.giftId };
 }
 
+/** Tells the sender the recipient wrote back. The reply itself stays on the gift page. */
+export function giftReplyEmail(opts: { to: string; recipientName: string; giftUrl: string; giftId: string }): SendInput {
+  const subject = `${opts.recipientName} wrote back`;
+  const text = [`${opts.recipientName} sent you a reply to your gift.`, "", `Read it here: ${opts.giftUrl}`, "", "You're getting this because the gift is set to email you about it. You can turn that off on the gift page."].join("\n");
+  const html = `<div style="font-family:Georgia,serif;max-width:520px;margin:0 auto;padding:32px 24px;color:#1c2333;background:#fbf8f1"><p style="font-size:14px;letter-spacing:.14em;text-transform:uppercase;color:#3e7f86">A message came back</p><h1 style="font-weight:400;font-size:28px;margin:8px 0 16px">${escapeHtml(opts.recipientName)} wrote back.</h1><p style="margin:28px 0"><a href="${escapeHtml(opts.giftUrl)}" style="display:inline-block;background:#14213d;color:#f4efe4;text-decoration:none;padding:14px 24px;border-radius:999px;font-family:sans-serif;font-weight:600">Read the reply</a></p><p style="font-size:12px;color:#8b94a5;margin-top:32px">You're getting this because the gift is set to email you about it. You can turn that off on the gift page.</p></div>`;
+  return { to: opts.to, subject, text, html, template: "gift-reply", giftId: opts.giftId };
+}
+
 export function orderConfirmationEmail(opts: { to: string; orderRef: string; items: string[]; totalText: string; physical: boolean; orderId: string; giftId: string }): SendInput {
   const subject = `Your Message in a Bottle order ${opts.orderRef}`;
   const text = [`Thank you for your order ${opts.orderRef}.`, "", ...opts.items.map((i) => `• ${i}`), "", `Total: ${opts.totalText}`, "", opts.physical ? "We'll email you again when your keepsake is dispatched." : "Your private link is live — share it from My gifts.", ""].join("\n");

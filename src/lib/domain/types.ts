@@ -344,6 +344,17 @@ export interface AuditEvent {
   meta: Record<string, string | number | boolean | null>;
 }
 
+/** A short private note the recipient sends back to the sender from the gift. */
+export interface GiftReply {
+  id: string;
+  giftId: string;
+  ownerId: string;
+  message: string;
+  createdAt: string;
+  /** When the sender first saw it on their gift page. */
+  readAt: string | null;
+}
+
 /**
  * The gift link emailed to the recipient on a chosen day. Sent by the daily
  * delivery run on the morning of `sendAt` (UK time); the link must be live then.

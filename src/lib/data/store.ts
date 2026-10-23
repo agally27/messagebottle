@@ -3,6 +3,7 @@ import type {
   EmailDelivery,
   GenerationJob,
   Gift,
+  GiftReply,
   JobStatus,
   Order,
   OrderStatus,
@@ -92,6 +93,16 @@ export interface DataStore {
     listDue(now: string, limit: number): Promise<ScheduledDelivery[]>;
     /** Atomically move a due, scheduled delivery to "sending". Null if another worker got it first. */
     claim(id: string, now: string): Promise<ScheduledDelivery | null>;
+  };
+
+  replies: {
+    create(reply: GiftReply): Promise<GiftReply>;
+    /** Newest first. */
+    listByGift(giftId: string): Promise<GiftReply[]>;
+    countByGift(giftId: string): Promise<number>;
+    markRead(giftId: string, at: string): Promise<void>;
+    /** Unread reply counts per gift, for one sender's dashboard. */
+    unreadCountsByOwner(ownerId: string): Promise<Record<string, number>>;
   };
 
   rateLimit: {
